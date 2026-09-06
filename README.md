@@ -49,21 +49,22 @@ returned as though it were complete.
 
 ## Feeding a geometry kernel
 
-With [ImagePairGeometry.jl](https://github.com/alex-s-gardner/ImagePairGeometry.jl) loaded, an extension
-converts an acquisition into its types:
+This package reads products and says nothing about geometry. Converting an acquisition into a geometry
+package's types belongs to that package, since they are its types:
+[ImagePairGeometry.jl](https://github.com/alex-s-gardner/ImagePairGeometry.jl) extends its own
+constructors over a `Radar`, so loading both is all that is needed.
 
 ```julia
-using SARDatasets, ImagePairGeometry
+using ImagePairGeometry, SARDatasets
 
-pair = image_pair(open_sar(url1), open_sar(url2))
+pair = CoregisteredPair(open_sar(url1), open_sar(url2))
 pair.coordinate    # a RadarCoordinate, incidence angle included
 pair.dt / 86400    # the repeat interval in days
 ```
 
-The conversion lives here rather than there because that package depends on no IO stack by design. It
-checks three things a hand-assembled coordinate can get wrong silently: that the state vectors are
-uniformly spaced, that they bracket the acquisition — an out-of-range solve extrapolates rather than
-throwing — and that the azimuth times and the orbit share one epoch.
+What does live here is what a pair of *products* means: `repeat_interval` spans both epochs, and
+`epoch_offset` gives the seconds between a product's epoch and midnight — the constant a kernel indexing
+azimuth lines against midnight needs.
 
 Verified against `h5py` and `isce3` on a real granule: all 26 geometry and identification values agree
 bitwise, and the scene-center range, azimuth time, position and velocity agree to 0 ULP.

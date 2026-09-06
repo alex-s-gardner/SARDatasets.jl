@@ -18,7 +18,7 @@ using HDF5: h5open, ishdf5, read_attribute
 using StaticArrays: SVector
 
 export open_sar, orbit, nlines, nsamples, start_datetime, stop_datetime
-export radar_coordinate, image_pair, repeat_interval
+export repeat_interval, epoch_offset
 export Radar, Identification, RadarGeometry, StateVectors
 export LocalFile, RemoteHTTP, RemoteS3
 
@@ -30,6 +30,6 @@ include("nisar.jl")
 # `remote.jl` before `source.jl`: the remote sources are what `open_sar` dispatches on.
 include("remote.jl")
 include("source.jl")
-include("geometry_api.jl")
+include("pairing.jl")
 
 end

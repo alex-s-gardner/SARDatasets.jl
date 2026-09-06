@@ -45,56 +45,6 @@ jobs:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
-  bridge:
-    name: Geometry bridge - Julia ${{ matrix.version }}
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        version: ['lts', '1']
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/checkout@v6
-        with:
-          repository: alex-s-gardner/FastGeoProjections.jl
-          ref: main
-          path: deps/FastGeoProjections.jl
-      - uses: actions/checkout@v6
-        with:
-          repository: alex-s-gardner/ImagePairGeometry.jl
-          ref: main
-          path: deps/ImagePairGeometry.jl
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: ${{ matrix.version }}
-      - uses: julia-actions/cache@v2
-      # The bridge is an extension over ImagePairGeometry, which itself needs FastGeoProjections from
-      # `main` — its registered version predates the point-operator API. Neither resolves from a
-      # registry, which forces three things:
-      #
-      # `Pkg.develop` by path rather than `Pkg.add` by URL, because `Pkg.add` promotes
-      # ImagePairGeometry out of `[weakdeps]` into `[deps]` and deletes the `[weakdeps]` block, which
-      # silently stops the extension from loading at all.
-      #
-      # The test environment rather than the package environment, for the same reason: developing into
-      # the package environment rewrites `Project.toml`.
-      #
-      # `include("test/runtests.jl")` rather than `Pkg.test`, because Julia 1.10 fails with
-      # `can not merge projects` when it merges an environment holding a path-sourced package that the
-      # package environment also names.
-      - name: Run the suite with the geometry packages
-        shell: julia --color=yes {0}
-        run: |
-          import Pkg
-          Pkg.activate("test")
-          Pkg.develop([Pkg.PackageSpec(path = "deps/FastGeoProjections.jl"),
-                       Pkg.PackageSpec(path = "deps/ImagePairGeometry.jl"),
-                       Pkg.PackageSpec(path = ".")])
-          Pkg.instantiate()
-          include(joinpath(pwd(), "test", "runtests.jl"))
   docs:
     name: Documentation
     runs-on: ubuntu-latest
