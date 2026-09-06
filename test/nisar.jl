@@ -3,8 +3,8 @@
 # Floats are compared with `===` against the fixture's hex literals, so these assert bit-exact
 # agreement with what `h5py` read from the granule, not agreement to a printed precision.
 
-using SAR
-using SAR: LookSide, LookLeft, LookRight, SPEED_OF_LIGHT, parse_cf_epoch, NisarBackend, nisar_band,
+using SARDatasets
+using SARDatasets: LookSide, LookLeft, LookRight, SPEED_OF_LIGHT, parse_cf_epoch, NisarBackend, nisar_band,
            nisar_product_type, GEOCODED_TYPES
 using Dates
 using Test

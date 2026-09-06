@@ -5,8 +5,8 @@
 # dataset living in the head. That is asserted here against the fixture product. The network path
 # itself is `live_nisar.jl`.
 
-using SAR
-using SAR: DEFAULT_PREFETCH, s3_https_url, localpath, source_for, _write_sparse
+using SARDatasets
+using SARDatasets: DEFAULT_PREFETCH, s3_https_url, localpath, source_for, _write_sparse
 using Test
 
 @testset "source_for dispatches on the spelling" begin

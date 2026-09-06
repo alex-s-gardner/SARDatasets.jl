@@ -1,5 +1,5 @@
 """
-    SAR
+    SARDatasets
 
 Read SAR acquisitions into one type, whatever the sensor.
 
@@ -10,7 +10,7 @@ a [`StateVectors`](@ref) record, read on first access.
 NISAR-format HDF5 products are read natively. The metadata of one is a few tens of kilobytes near the
 start of a file tens of gigabytes long, so a remote product can be opened without transferring it.
 """
-module SAR
+module SARDatasets
 
 import Dates
 using Dates: DateTime

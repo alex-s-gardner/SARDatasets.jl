@@ -1,9 +1,9 @@
-using SAR
+using SARDatasets
 using Test
 
 include("fixture.jl")
 
-@testset verbose = true "SAR.jl" begin
+@testset verbose = true "SARDatasets.jl" begin
     @time @testset "NISAR reader" begin include("nisar.jl") end
     @time @testset "access layer" begin include("remote.jl") end
     # The bridge needs ImagePairGeometry, which is a weak dependency: it is in `test/Project.toml` where

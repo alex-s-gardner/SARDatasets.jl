@@ -7,7 +7,7 @@
 # The values asserted are the committed fixture's, which was harvested from this granule with `h5py`.
 # So a pass here means the Julia reader and the reference agree on a real product, bitwise.
 
-using SAR
+using SARDatasets
 using Test
 
 const LIVE_URL = get(ENV, "SAR_LIVE_URL",

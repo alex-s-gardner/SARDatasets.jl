@@ -1,14 +1,14 @@
-# SAR
+# SARDatasets
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://alex-s-gardner.github.io/SAR.jl/stable/)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://alex-s-gardner.github.io/SAR.jl/dev/)
-[![Build Status](https://github.com/alex-s-gardner/SAR.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/alex-s-gardner/SAR.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/alex-s-gardner/SAR.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/alex-s-gardner/SAR.jl)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://alex-s-gardner.github.io/SARDatasets.jl/stable/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://alex-s-gardner.github.io/SARDatasets.jl/dev/)
+[![Build Status](https://github.com/alex-s-gardner/SARDatasets.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/alex-s-gardner/SARDatasets.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/alex-s-gardner/SARDatasets.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/alex-s-gardner/SARDatasets.jl)
 
 Read SAR acquisitions into one type, whatever the sensor.
 
 ```julia
-using SAR
+using SARDatasets
 
 s = open_sar("NISAR_L1_PR_RSLC_....h5")
 s.geometry.starting_range   # 895255.2277025
@@ -53,7 +53,7 @@ With [ImagePairGeometry.jl](https://github.com/alex-s-gardner/ImagePairGeometry.
 converts an acquisition into its types:
 
 ```julia
-using SAR, ImagePairGeometry
+using SARDatasets, ImagePairGeometry
 
 pair = image_pair(open_sar(url1), open_sar(url2))
 pair.coordinate    # a RadarCoordinate, incidence angle included

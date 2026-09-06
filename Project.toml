@@ -1,4 +1,4 @@
-name = "SAR"
+name = "SARDatasets"
 uuid = "1d8f5cac-0b48-4ea8-8d35-4fce00b6c96f"
 authors = ["Alex S. Gardner, JPL/NASA"]
 version = "1.0.0-DEV"
@@ -12,7 +12,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 ImagePairGeometry = "7d3defa8-4bb6-45cf-b5d0-7628f127c0fd"
 
 [extensions]
-SARImagePairGeometryExt = "ImagePairGeometry"
+SARDatasetsImagePairGeometryExt = "ImagePairGeometry"
 
 [compat]
 Dates = "1"

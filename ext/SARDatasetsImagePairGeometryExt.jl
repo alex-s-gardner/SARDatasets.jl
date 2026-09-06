@@ -1,4 +1,4 @@
-module SARImagePairGeometryExt
+module SARDatasetsImagePairGeometryExt
 
 # Turning a read acquisition into the geometry types ImagePairGeometry computes with.
 #
@@ -22,9 +22,8 @@ module SARImagePairGeometryExt
 # Coverage. A solve at a time the orbit does not bracket extrapolates rather than failing, so the
 # bracket is checked before the coordinate is built.
 
-using SAR
-using SAR: SAR, Radar, RadarGeometry, StateVectors, LookSide, LookLeft, LookRight,
-           radar_coordinate, image_pair, repeat_interval
+using SARDatasets: SARDatasets, Radar, RadarGeometry, StateVectors, LookSide, LookLeft,
+                   LookRight, orbit, radar_coordinate, image_pair, repeat_interval
 using Dates: DateTime, Date, Millisecond, value
 using ImagePairGeometry: ImagePairGeometry, RadarCoordinate, CoregisteredPair, incidence_angle
 import ImagePairGeometry
@@ -70,12 +69,12 @@ averaged over.
 # Examples
 
 ```julia
-using SAR, ImagePairGeometry
+using SARDatasets, ImagePairGeometry
 s = open_sar("NISAR_L1_PR_RSLC_....h5")
 coord = radar_coordinate(s)
 ```
 """
-function SAR.radar_coordinate(s::Radar; zrange = nothing, chebyshev::Bool = false)
+function SARDatasets.radar_coordinate(s::Radar; zrange = nothing, chebyshev::Bool = false)
     g = s.geometry
     sv = orbit(s)
 
@@ -120,7 +119,7 @@ pair = image_pair(open_sar(url1), open_sar(url2))
 pair.dt / 86400   # the repeat interval in days
 ```
 """
-function SAR.image_pair(reference::Radar, secondary::Radar; kwargs...)
+function SARDatasets.image_pair(reference::Radar, secondary::Radar; kwargs...)
     dt = repeat_interval(reference, secondary)
     dt > 0 || throw(ArgumentError(
         "the secondary acquisition starts $(-dt) s before the reference; pass them in acquisition " *

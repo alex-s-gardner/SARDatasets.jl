@@ -13,7 +13,7 @@ The acquisition as a geometry package's radar coordinate.
 Provided by an extension. Load ImagePairGeometry alongside this package to get it:
 
 ```julia
-using SAR, ImagePairGeometry
+using SARDatasets, ImagePairGeometry
 coord = radar_coordinate(open_sar(path))
 ```
 """

@@ -4,8 +4,8 @@
 # derived ones — the epoch offset and the incidence angle — correctly, and that a product whose orbit
 # cannot support the geometry is refused rather than extrapolated from.
 
-using SAR
-using SAR: LookLeft, LookRight
+using SARDatasets
+using SARDatasets: LookLeft, LookRight
 using ImagePairGeometry
 using ImagePairGeometry: interpolate
 using Dates
