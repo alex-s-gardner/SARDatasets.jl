@@ -78,6 +78,6 @@ jobs:
         shell: julia --project=docs --color=yes {0}
         run: |
           using Documenter: DocMeta, doctest
-          using SAR
-          DocMeta.setdocmeta!(SAR, :DocTestSetup, :(using SAR); recursive=true)
-          doctest(SAR)
+          using SARDatasets
+          DocMeta.setdocmeta!(SARDatasets, :DocTestSetup, :(using SARDatasets); recursive=true)
+          doctest(SARDatasets)

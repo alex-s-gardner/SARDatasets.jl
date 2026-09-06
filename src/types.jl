@@ -84,14 +84,22 @@ end
 
 """
     start_datetime(id::Identification) -> DateTime
-    stop_datetime(id::Identification) -> DateTime
 
-The zero-Doppler bounds as `DateTime`s, truncated to milliseconds.
+The acquisition's zero-Doppler start as a `DateTime`, truncated to milliseconds.
 
-The product records these to nanoseconds. Use `id.start_time` / `id.stop_time` for the exact strings,
-or `RadarGeometry`'s `sensing_start` / `sensing_stop` for full-precision arithmetic.
+The product records it to nanoseconds. Use `id.start_time` for the exact string, or
+[`RadarGeometry`](@ref)'s `sensing_start` for full-precision arithmetic.
 """
 start_datetime(id::Identification) = _truncated_datetime(id.start_time)
+
+"""
+    stop_datetime(id::Identification) -> DateTime
+
+The acquisition's zero-Doppler end as a `DateTime`, truncated to milliseconds.
+
+The counterpart of [`start_datetime`](@ref), with the same caveat: the product records it to
+nanoseconds, and `RadarGeometry`'s `sensing_stop` carries the full precision.
+"""
 stop_datetime(id::Identification) = _truncated_datetime(id.stop_time)
 
 """
