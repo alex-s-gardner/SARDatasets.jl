@@ -7,7 +7,7 @@
 # The values asserted are the committed fixture's, which was harvested from this granule with `h5py`.
 # So a pass here means the Julia reader and the reference agree on a real product, bitwise.
 
-using SARDatasets
+using SLCDatasets
 using Test
 
 const LIVE_URL = get(ENV, "SAR_LIVE_URL",
@@ -17,7 +17,7 @@ const LIVE_URL = get(ENV, "SAR_LIVE_URL",
 
 mktempdir() do dir
     src = RemoteHTTP(LIVE_URL; dir)
-    s = open_sar(src)
+    s = open_slc(src)
     o = orbit(s)
     path = only(readdir(dir; join = true))
 
@@ -58,7 +58,7 @@ mktempdir() do dir
 
     @testset "a prefetch too small to hold the metadata names the knob" begin
         err = try
-            open_sar(RemoteHTTP(LIVE_URL; prefetch = 64 * 1024, dir = mktempdir()))
+            open_slc(RemoteHTTP(LIVE_URL; prefetch = 64 * 1024, dir = mktempdir()))
             nothing
         catch e
             sprint(showerror, e)

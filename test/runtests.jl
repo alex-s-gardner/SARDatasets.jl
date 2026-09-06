@@ -1,9 +1,9 @@
-using SARDatasets
+using SLCDatasets
 using Test
 
 include("fixture.jl")
 
-@testset verbose = true "SARDatasets.jl" begin
+@testset verbose = true "SLCDatasets.jl" begin
     @time @testset "NISAR reader" begin include("nisar.jl") end
     @time @testset "access layer" begin include("remote.jl") end
     @time @testset "pairing" begin include("pairing.jl") end

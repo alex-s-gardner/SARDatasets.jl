@@ -1,8 +1,8 @@
 # The uniform acquisition type, and the two sensor-neutral metadata records it carries.
 #
-# A SAR product is not a bag of arbitrary named variables — it is a fixed, known set of geometry
-# quantities. So the metadata is plain immutable structs rather than a variable/attribute protocol, and
-# only the bulky part, the state vectors, is deferred.
+# An SLC is not a bag of arbitrary named variables — it is a fixed, known set of geometry quantities. So
+# the metadata is plain immutable structs rather than a variable/attribute protocol, and only the bulky
+# part, the state vectors, is deferred.
 #
 # The field set is what a geometry consumer needs, taken from the two reference loaders in
 # hyp3-autorift's `testGeogrid.py`: `loadMetadataRslc` for NISAR and `loadMetadata` for Sentinel-1.
@@ -19,42 +19,42 @@ Which side of the flight track the radar points: `LookLeft` or `LookRight`.
 @enum LookSide LookLeft LookRight
 
 """
-    AbstractRadar
+    AbstractSLC
 
-One SAR acquisition, whatever the sensor. See [`Radar`](@ref).
+One single-look complex acquisition, whatever the sensor. See [`SLC`](@ref).
 """
-abstract type AbstractRadar end
+abstract type AbstractSLC end
 
 """
-    AbstractSARBackend
+    AbstractSLCBackend
 
 How one sensor's bytes are laid out and named. A backend knows the group and dataset paths of its
 product family; it does not know how the bytes are reached — that is an
-[`AbstractSARSource`](@ref).
+[`AbstractSLCSource`](@ref).
 """
-abstract type AbstractSARBackend end
+abstract type AbstractSLCBackend end
 
 """
-    AbstractSARSource
+    AbstractSLCSource
 
 Where a product's bytes come from. [`LocalFile`](@ref) is the only route that needs no network; see
 [`RemoteHTTP`](@ref) and [`RemoteS3`](@ref) for the others.
 """
-abstract type AbstractSARSource end
+abstract type AbstractSLCSource end
 
 """
     LocalFile(path)
 
 A product already on disk.
 """
-struct LocalFile <: AbstractSARSource
+struct LocalFile <: AbstractSLCSource
     path::String
 end
 
 LocalFile(path::AbstractString) = LocalFile(String(path))
 
 """
-    localpath(src::AbstractSARSource) -> String
+    localpath(src::AbstractSLCSource) -> String
 
 A path that can be opened, materializing whatever the source needs to make that true.
 """
@@ -162,50 +162,50 @@ struct StateVectors
 end
 
 """
-    Radar <: AbstractRadar
+    SLC <: AbstractSLC
 
 One SAR acquisition, read through a sensor backend.
 
 `identification` and `geometry` are parsed when the product is opened: they are a few dozen scalars,
-and a product whose metadata cannot be read is not usable, so failing at `open_sar` is better than
+and a product whose metadata cannot be read is not usable, so failing at `open_slc` is better than
 failing later. The state vectors are read on first access and then held, since a consumer touching only
 the geometry should not pay for them.
 
-Build one with [`open_sar`](@ref) rather than calling this constructor.
+Build one with [`open_slc`](@ref) rather than calling this constructor.
 
 # Examples
 
 ```julia
-s = open_sar("NISAR_L1_PR_RSLC_....h5")
+s = open_slc("NISAR_L1_PR_RSLC_....h5")
 s.geometry.starting_range   # already in hand
 orbit(s)                    # read on first access
 ```
 """
-mutable struct Radar{B<:AbstractSARBackend} <: AbstractRadar
+mutable struct SLC{B<:AbstractSLCBackend} <: AbstractSLC
     const backend::B
     const identification::Identification
     const geometry::RadarGeometry
     orbit::Union{Nothing,StateVectors}
 end
 
-Radar(backend::AbstractSARBackend, ident::Identification, geom::RadarGeometry) =
-    Radar(backend, ident, geom, nothing)
+SLC(backend::AbstractSLCBackend, ident::Identification, geom::RadarGeometry) =
+    SLC(backend, ident, geom, nothing)
 
 """
-    nlines(s::Radar)
-    nsamples(s::Radar)
+    nlines(s::SLC)
+    nsamples(s::SLC)
 
 Image height and width in pixels.
 """
-nlines(s::Radar) = s.geometry.nlines
-nsamples(s::Radar) = s.geometry.nsamples
+nlines(s::SLC) = s.geometry.nlines
+nsamples(s::SLC) = s.geometry.nsamples
 
 """
-    orbit(s::Radar) -> StateVectors
+    orbit(s::SLC) -> StateVectors
 
 The platform state vectors, read on first call and held afterwards.
 """
-function orbit(s::Radar)
+function orbit(s::SLC)
     o = s.orbit
     o === nothing || return o
     o = read_orbit(s.backend)
@@ -213,11 +213,11 @@ function orbit(s::Radar)
     return o
 end
 
-Base.show(io::IO, s::Radar) = print(io, "Radar(", s.identification.product_type, ", ",
+Base.show(io::IO, s::SLC) = print(io, "SLC(", s.identification.product_type, ", ",
                                     s.identification.mission, ", ",
                                     s.geometry.nlines, "x", s.geometry.nsamples, ")")
 
-function Base.show(io::IO, ::MIME"text/plain", s::Radar)
+function Base.show(io::IO, ::MIME"text/plain", s::SLC)
     id, g = s.identification, s.geometry
     println(io, "SAR acquisition")
     println(io, "  mission        : ", id.mission, " (", id.product_type, ")")

@@ -1,14 +1,14 @@
-using SARDatasets
+using SLCDatasets
 using Documenter
 
-DocMeta.setdocmeta!(SARDatasets, :DocTestSetup, :(using SARDatasets); recursive=true)
+DocMeta.setdocmeta!(SLCDatasets, :DocTestSetup, :(using SLCDatasets); recursive=true)
 
 makedocs(;
-    modules=[SARDatasets],
+    modules=[SLCDatasets],
     authors="Alex S. Gardner, JPL/NASA",
-    sitename="SARDatasets.jl",
+    sitename="SLCDatasets.jl",
     format=Documenter.HTML(;
-        canonical="https://alex-s-gardner.github.io/SARDatasets.jl",
+        canonical="https://alex-s-gardner.github.io/SLCDatasets.jl",
         edit_link="main",
         assets=String[],
     ),
@@ -18,6 +18,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/alex-s-gardner/SARDatasets.jl",
+    repo="github.com/alex-s-gardner/SLCDatasets.jl",
     devbranch="main",
 )

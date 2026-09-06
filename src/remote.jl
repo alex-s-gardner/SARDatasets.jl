@@ -10,7 +10,7 @@
 #
 # Two things this deliberately does not do. It does not implement an HDF5 virtual file driver: HDF5.jl
 # exposes no Julia-callable one, and `h5open` takes a path or a byte image rather than an `IO`. It does
-# not guess whether the fetched window was enough — after opening, `open_sar` reads every dataset it
+# not guess whether the fetched window was enough — after opening, `open_slc` reads every dataset it
 # needs, and a read that falls in the hole fails. `RemoteHTTP` turns that failure into a message naming
 # the knob to raise, because a silently truncated read would be worse than a slow one.
 
@@ -35,7 +35,7 @@ a temporary directory; pass one to keep it across sessions.
 Earthdata URLs are authenticated from `~/.netrc` and the redirect to the signed data URL is followed,
 so a `urs.earthdata.nasa.gov` entry there is all the setup needed.
 """
-struct RemoteHTTP <: AbstractSARSource
+struct RemoteHTTP <: AbstractSLCSource
     url::String
     prefetch::Int
     dir::Union{Nothing,String}
@@ -56,7 +56,7 @@ credentials in the environment (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, an
 `AWS_SESSION_TOKEN` for the temporary credentials a DAAC issues) and to be running in the bucket's
 region. Requester-pays and cross-region access are refused by the endpoint, not here.
 """
-struct RemoteS3 <: AbstractSARSource
+struct RemoteS3 <: AbstractSLCSource
     uri::String
     prefetch::Int
     dir::Union{Nothing,String}

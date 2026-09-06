@@ -5,8 +5,8 @@
 # dataset living in the head. That is asserted here against the fixture product. The network path
 # itself is `live_nisar.jl`.
 
-using SARDatasets
-using SARDatasets: DEFAULT_PREFETCH, s3_https_url, localpath, source_for, _write_sparse
+using SLCDatasets
+using SLCDatasets: DEFAULT_PREFETCH, s3_https_url, localpath, source_for, _write_sparse
 using Test
 
 @testset "source_for dispatches on the spelling" begin
@@ -45,13 +45,13 @@ end
     mktempdir() do dir
         full = write_fixture_product(joinpath(dir, "full.h5"))
         total = filesize(full)
-        reference = open_sar(full)
+        reference = open_slc(full)
 
         head = read(open(full, "r"), total)
         sparse = _write_sparse(joinpath(dir, "sparse.h5"), head, total)
         @test filesize(sparse) == total
 
-        s = open_sar(sparse)
+        s = open_slc(sparse)
         @test s.geometry.starting_range === reference.geometry.starting_range
         @test s.geometry.sensing_start === reference.geometry.sensing_start
         @test s.geometry.nlines == reference.geometry.nlines
@@ -68,7 +68,7 @@ end
         head = read(full)
         padded = _write_sparse(joinpath(dir, "padded.h5"), head, length(head) + 64 * 1024 * 1024)
         @test filesize(padded) > length(head)
-        s = open_sar(padded)
+        s = open_slc(padded)
         @test s.geometry.nsamples == FIXTURE.geometry.nsamples
         @test length(orbit(s).time) == FIXTURE.orbit.n
     end
@@ -82,6 +82,6 @@ end
         total = filesize(full)
         head = read(open(full, "r"), max(2048, total ÷ 4))
         truncated = _write_sparse(joinpath(dir, "truncated.h5"), head, total)
-        @test_throws Exception open_sar(truncated)
+        @test_throws Exception open_slc(truncated)
     end
 end
