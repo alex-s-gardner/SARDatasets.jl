@@ -1,14 +1,14 @@
 ```@meta
-CurrentModule = SAR
+CurrentModule = SARDatasets
 ```
 
-# SAR
+# SARDatasets
 
-Documentation for [SAR](https://github.com/alex-s-gardner/SAR.jl).
+Documentation for [SARDatasets](https://github.com/alex-s-gardner/SARDatasets.jl).
 
 ```@index
 ```
 
 ```@autodocs
-Modules = [SAR]
+Modules = [SARDatasets]
 ```
