@@ -7,6 +7,7 @@
 
 using HDF5
 using JSON3
+using SARDatasets: SPEED_OF_LIGHT
 
 const FIXTURE = JSON3.read(read(joinpath(@__DIR__, "reference", "nisar_metadata.json"), String))
 

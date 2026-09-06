@@ -37,6 +37,17 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
+      # The bridge test needs ImagePairGeometry, and that needs FastGeoProjections from `main` — its
+      # registered version predates the point-operator API. Neither is resolvable from a registry, so
+      # both are added here rather than named in `test/Project.toml`, and `runtests.jl` skips the
+      # bridge test where they are absent.
+      - name: Add the unregistered geometry packages
+        shell: julia --color=yes {0}
+        run: |
+          import Pkg
+          Pkg.activate("test")
+          Pkg.add(url = "https://github.com/alex-s-gardner/FastGeoProjections.jl", rev = "main")
+          Pkg.add(url = "https://github.com/alex-s-gardner/ImagePairGeometry.jl", rev = "main")
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
