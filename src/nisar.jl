@@ -187,7 +187,7 @@ function read_orbit(b::NisarBackend)
             "orbit in `$(b.path)` has $(length(time)) times but $(size(pos, 2)) state vectors"))
         epoch = parse_cf_epoch(read_attribute(g["time"], "units"))
         get_str(name, default) = haskey(g, name) ? _string(read(g[name])) : default
-        return Orbit(
+        return StateVectors(
             time,
             [SVector{3,Float64}(pos[1, i], pos[2, i], pos[3, i]) for i in axes(pos, 2)],
             [SVector{3,Float64}(vel[1, i], vel[2, i], vel[3, i]) for i in axes(vel, 2)],

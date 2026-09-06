@@ -1,6 +1,9 @@
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+FastGeoProjections = "981663e8-0c94-46dd-b2cf-efc8480900ec"
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
+ImagePairGeometry = "7d3defa8-4bb6-45cf-b5d0-7628f127c0fd"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+SAR = "1d8f5cac-0b48-4ea8-8d35-4fce00b6c96f"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

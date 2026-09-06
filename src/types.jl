@@ -133,15 +133,18 @@ struct RadarGeometry
 end
 
 """
-    Orbit
+    StateVectors
 
 Platform state vectors in ECEF, and the instant they are measured from.
 
 `time` is seconds since `epoch`, `position` is meters and `velocity` meters per second. The times are
 not required to be uniformly spaced here — a consumer needing that must check, since whether it holds
 is a property of the product rather than of this type.
+
+This is the product's own record, not an interpolator: a consumer wanting to evaluate the trajectory
+between samples builds one from these.
 """
-struct Orbit
+struct StateVectors
     time::Vector{Float64}
     position::Vector{SVector{3,Float64}}
     velocity::Vector{SVector{3,Float64}}
@@ -174,7 +177,7 @@ mutable struct Radar{B<:AbstractSARBackend} <: AbstractRadar
     const backend::B
     const identification::Identification
     const geometry::RadarGeometry
-    orbit::Union{Nothing,Orbit}
+    orbit::Union{Nothing,StateVectors}
     const bands::Dict{Symbol,Any}
 end
 
@@ -191,7 +194,7 @@ nlines(s::Radar) = s.geometry.nlines
 nsamples(s::Radar) = s.geometry.nsamples
 
 """
-    orbit(s::Radar) -> Orbit
+    orbit(s::Radar) -> StateVectors
 
 The platform state vectors, read on first call and held afterwards.
 """

@@ -14,6 +14,48 @@ const FIXTURE = JSON3.read(read(joinpath(@__DIR__, "reference", "nisar_metadata.
 # compare against: a decimal round-trip through JSON is not guaranteed to preserve the last bit.
 gx(v) = parse(Float64, v.hex)
 
+# The inverse, for a test that needs a value the granule does not carry.
+hx(x::Real) = (dec = Float64(x), hex = _hex_literal(Float64(x)))
+
+function _hex_literal(v::Float64)
+    v == 0.0 && return signbit(v) ? "-0x0.0p+0" : "0x0.0p+0"
+    sign = signbit(v) ? "-" : ""
+    m, e = frexp(abs(v))
+    frac = m * 2 - 1.0
+    digits = ""
+    for _ in 1:13
+        frac *= 16
+        d = floor(Int, frac)
+        digits *= string(d; base = 16)
+        frac -= d
+    end
+    exponent = e - 1
+    return string(sign, "0x1.", digits, "p", exponent >= 0 ? "+" : "-", abs(exponent))
+end
+
+"""
+    override(fx, path => value, ...) -> NamedTuple
+
+`fx` with the named fields replaced, for a test needing a product the granule is not.
+
+`path` is a `Symbol` for a top-level field or a `Symbol` pair for a nested one, as in
+`:geometry => :epoch`.
+"""
+function override(fx, pairs::Pair...)
+    out = Dict{Symbol,Any}(k => v for (k, v) in Base.pairs(fx))
+    for (key, value) in pairs
+        if key isa Pair
+            outer, inner = key
+            nested = Dict{Symbol,Any}(k => v for (k, v) in Base.pairs(out[outer]))
+            nested[inner] = value
+            out[outer] = NamedTuple(nested)
+        else
+            out[key] = value
+        end
+    end
+    return NamedTuple(out)
+end
+
 """
     write_fixture_product(path, fx = FIXTURE) -> String
 
