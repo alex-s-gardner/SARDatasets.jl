@@ -35,6 +35,32 @@ product family; it does not know how the bytes are reached — that is an
 abstract type AbstractSARBackend end
 
 """
+    AbstractSARSource
+
+Where a product's bytes come from. [`LocalFile`](@ref) is the only route that needs no network; see
+[`RemoteHTTP`](@ref) and [`RemoteS3`](@ref) for the others.
+"""
+abstract type AbstractSARSource end
+
+"""
+    LocalFile(path)
+
+A product already on disk.
+"""
+struct LocalFile <: AbstractSARSource
+    path::String
+end
+
+LocalFile(path::AbstractString) = LocalFile(String(path))
+
+"""
+    localpath(src::AbstractSARSource) -> String
+
+A path that can be opened, materializing whatever the source needs to make that true.
+"""
+localpath(src::LocalFile) = src.path
+
+"""
     Identification
 
 What an acquisition is: mission, product, orbit and coverage.

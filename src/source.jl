@@ -1,33 +1,8 @@
-# Where a product's bytes come from, and the single entry point that opens one.
+# The single entry point that opens a product, and the dispatch that picks its reader.
 #
 # A source is separate from a backend: the backend knows a sensor's group and dataset names, the
 # source knows how to get a readable file. Splitting them means a new sensor costs a backend and a new
 # access route costs a source, rather than one costing both.
-
-"""
-    AbstractSARSource
-
-Where a product's bytes come from. [`LocalFile`](@ref) is the only route that needs no network.
-"""
-abstract type AbstractSARSource end
-
-"""
-    LocalFile(path)
-
-A product already on disk.
-"""
-struct LocalFile <: AbstractSARSource
-    path::String
-end
-
-LocalFile(path::AbstractString) = LocalFile(String(path))
-
-"""
-    localpath(src::AbstractSARSource) -> String
-
-A path that can be opened, materializing whatever the source needs to make that true.
-"""
-localpath(src::LocalFile) = src.path
 
 """
     open_sar(src; frequency = nothing) -> Radar
@@ -64,14 +39,29 @@ function open_sar(src::AbstractSARSource; frequency = nothing)
     return Radar(backend, read_identification(backend), read_geometry(backend))
 end
 
+# A partly fetched product fails inside HDF5, reading zeros out of the hole past the prefetch window.
+# Reporting that as-is would leave a caller staring at an HDF5 stack trace, so the two remote sources
+# translate it into the knob that fixes it.
+function open_sar(src::Union{RemoteHTTP,RemoteS3}; frequency = nothing)
+    path = localpath(src)
+    return try
+        open_sar(LocalFile(path); frequency)
+    catch e
+        e isa ArgumentError && rethrow()
+        throw(_prefetch_error(src, path, e))
+    end
+end
+
 open_sar(path::AbstractString; kwargs...) = open_sar(source_for(path); kwargs...)
 
 """
     source_for(spec) -> AbstractSARSource
 
-The source a path or URL denotes.
+The source a path, URL or S3 URI denotes.
 """
 function source_for(spec::AbstractString)
+    startswith(spec, "s3://") && return RemoteS3(spec)
+    (startswith(spec, "http://") || startswith(spec, "https://")) && return RemoteHTTP(spec)
     return LocalFile(spec)
 end
 
