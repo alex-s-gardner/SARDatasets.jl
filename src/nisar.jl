@@ -13,14 +13,14 @@ const SENSOR_BANDS = ("LSAR", "SSAR")
 const SPEED_OF_LIGHT = 299792458.0
 
 """
-    NisarBackend <: AbstractSARBackend
+    NisarBackend <: AbstractSLCBackend
 
 A NISAR-format HDF5 product: a file, the sensor band group inside it, and the product type.
 
 `frequency` selects the sub-band (`"A"` or `"B"`); a product lists the ones it carries at
 `identification/listOfFrequencies`.
 """
-struct NisarBackend <: AbstractSARBackend
+struct NisarBackend <: AbstractSLCBackend
     path::String
     band::String
     product_type::String
@@ -34,9 +34,9 @@ frequency_path(b::NisarBackend) = string(swath_path(b), "/frequency", b.frequenc
 identification_path(b::NisarBackend) = string(SCIENCE_ROOT, "/", b.band, "/identification")
 orbit_path(b::NisarBackend) = string(metadata_path(b), "/orbit")
 
-# A geocoded product stores its samples on a map grid under `grids` rather than `swaths`. Only the
-# radar-geometry products carry the slant-range/azimuth axes this package reports, so the geocoded
-# ones are recognized in order to be rejected with a clear message rather than a missing-group error.
+# A geocoded product stores its samples on a map grid under `grids` rather than `swaths`, so it has no
+# slant-range axis for `RadarGeometry` to describe and is out of this package's scope. Recognized by name
+# in order to say that, rather than failing on a missing group.
 const GEOCODED_TYPES = ("GSLC", "GCOV", "GUNW", "GOFF")
 
 """
@@ -134,8 +134,9 @@ end
 
 function read_geometry(b::NisarBackend)
     b.product_type in GEOCODED_TYPES && throw(ArgumentError(
-        "`$(b.path)` is a $(b.product_type) product, which stores its samples on a map grid and " *
-        "carries no slant-range/azimuth geometry; open a radar-geometry product (RSLC) instead"))
+        "`$(b.path)` is a $(b.product_type) product, which stores its samples on a map grid and so " *
+        "carries no slant-range/azimuth geometry. This package reads SLCs in radar geometry; open an " *
+        "RSLC, or use a raster library for a geocoded product"))
     return h5open(b.path, "r") do h
         freq = h[frequency_path(b)]
         swaths = h[swath_path(b)]

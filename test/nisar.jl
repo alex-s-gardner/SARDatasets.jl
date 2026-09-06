@@ -3,8 +3,8 @@
 # Floats are compared with `===` against the fixture's hex literals, so these assert bit-exact
 # agreement with what `h5py` read from the granule, not agreement to a printed precision.
 
-using SARDatasets
-using SARDatasets: LookSide, LookLeft, LookRight, SPEED_OF_LIGHT, parse_cf_epoch, NisarBackend, nisar_band,
+using SLCDatasets
+using SLCDatasets: LookSide, LookLeft, LookRight, SPEED_OF_LIGHT, parse_cf_epoch, NisarBackend, nisar_band,
            nisar_product_type, GEOCODED_TYPES
 using Dates
 using Test
@@ -13,7 +13,7 @@ const FX = FIXTURE
 
 mktempdir() do dir
     path = write_fixture_product(joinpath(dir, "fixture_rslc.h5"))
-    s = open_sar(path)
+    s = open_slc(path)
 
     @testset "identification" begin
         id = s.identification
@@ -66,7 +66,7 @@ mktempdir() do dir
     end
 
     @testset "the orbit is read once and held" begin
-        s2 = open_sar(path)
+        s2 = open_slc(path)
         @test s2.orbit === nothing
         first_read = orbit(s2)
         @test s2.orbit !== nothing
@@ -114,17 +114,17 @@ end
 end
 
 @testset "unreadable inputs throw" begin
-    @test_throws "is not a readable file" open_sar(joinpath(@__DIR__, "no_such_file.h5"))
+    @test_throws "is not a readable file" open_slc(joinpath(@__DIR__, "no_such_file.h5"))
     mktempdir() do dir
         plain = joinpath(dir, "plain.txt")
         write(plain, "not hdf5")
-        @test_throws "is not an HDF5 file" open_sar(plain)
+        @test_throws "is not an HDF5 file" open_slc(plain)
 
         empty = joinpath(dir, "empty.h5")
         h5open(empty, "w") do h
             h["unrelated"] = 1
         end
-        @test_throws "not a NISAR-format product" open_sar(empty)
+        @test_throws "not a NISAR-format product" open_slc(empty)
     end
 end
 
@@ -140,6 +140,6 @@ end
             h["science/LSAR/GSLC/grids/frequencyA/x"] = [0.0, 1.0]
         end
         @test "GSLC" in GEOCODED_TYPES
-        @test_throws "carries no slant-range/azimuth geometry" open_sar(path)
+        @test_throws "carries no slant-range/azimuth geometry" open_slc(path)
     end
 end

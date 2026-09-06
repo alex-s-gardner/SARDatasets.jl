@@ -5,11 +5,11 @@
 # access route costs a source, rather than one costing both.
 
 """
-    open_sar(src; frequency = nothing) -> Radar
+    open_slc(src; frequency = nothing) -> SLC
 
 Open a SAR acquisition.
 
-`src` is an [`AbstractSARSource`](@ref), or a path or URL, which is resolved to one. The sensor
+`src` is an [`AbstractSLCSource`](@ref), or a path or URL, which is resolved to one. The sensor
 backend is chosen by inspecting the product rather than by the caller naming it, so the same call
 serves every supported format.
 
@@ -21,11 +21,11 @@ The identification and geometry records are read here; the state vectors are rea
 # Examples
 
 ```julia
-s = open_sar("NISAR_L1_PR_RSLC_....h5")
+s = open_slc("NISAR_L1_PR_RSLC_....h5")
 s.geometry.prf
 ```
 """
-function open_sar(src::AbstractSARSource; frequency = nothing)
+function open_slc(src::AbstractSLCSource; frequency = nothing)
     path = localpath(src)
     isfile(path) || throw(ArgumentError("`$path` is not a readable file"))
     ishdf5(path) || throw(ArgumentError(
@@ -35,26 +35,26 @@ function open_sar(src::AbstractSARSource; frequency = nothing)
     product_type = nisar_product_type(path, band)
     freq = frequency === nothing ? default_frequency(path, band) : String(frequency)
     backend = NisarBackend(path, band, product_type, freq)
-    return Radar(backend, read_identification(backend), read_geometry(backend))
+    return SLC(backend, read_identification(backend), read_geometry(backend))
 end
 
 # A partly fetched product fails inside HDF5, reading zeros out of the hole past the prefetch window.
 # Reporting that as-is would leave a caller staring at an HDF5 stack trace, so the two remote sources
 # translate it into the knob that fixes it.
-function open_sar(src::Union{RemoteHTTP,RemoteS3}; frequency = nothing)
+function open_slc(src::Union{RemoteHTTP,RemoteS3}; frequency = nothing)
     path = localpath(src)
     return try
-        open_sar(LocalFile(path); frequency)
+        open_slc(LocalFile(path); frequency)
     catch e
         e isa ArgumentError && rethrow()
         throw(_prefetch_error(src, path, e))
     end
 end
 
-open_sar(path::AbstractString; kwargs...) = open_sar(source_for(path); kwargs...)
+open_slc(path::AbstractString; kwargs...) = open_slc(source_for(path); kwargs...)
 
 """
-    source_for(spec) -> AbstractSARSource
+    source_for(spec) -> AbstractSLCSource
 
 The source a path, URL or S3 URI denotes.
 """

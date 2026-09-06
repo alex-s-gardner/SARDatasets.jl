@@ -1,11 +1,11 @@
 # Relating an acquisition's clock to another scale, and two acquisitions to each other.
 #
 # Both are properties of the products, so they live here. Turning a pair into a geometry package's own
-# types does not — those are its types, so it extends its own constructors over a `Radar`. Load
+# types does not — those are its types, so it extends its own constructors over a `SLC`. Load
 # ImagePairGeometry alongside this package to get that.
 
 """
-    repeat_interval(reference::Radar, secondary::Radar) -> Float64
+    repeat_interval(reference::SLC, secondary::SLC) -> Float64
 
 Seconds from the reference acquisition's start to the secondary's.
 
@@ -19,7 +19,7 @@ than silently on two.
 repeat_interval(a, b) / 86400   # the interval in days
 ```
 """
-function repeat_interval(reference::AbstractRadar, secondary::AbstractRadar)
+function repeat_interval(reference::AbstractSLC, secondary::AbstractSLC)
     a, b = reference.geometry, secondary.geometry
     between_epochs = a.epoch == b.epoch ? 0.0 :
                      Dates.value(Dates.Millisecond(b.epoch - a.epoch)) / 1000
@@ -28,7 +28,7 @@ end
 
 """
     epoch_offset(g::RadarGeometry) -> Float64
-    epoch_offset(s::Radar) -> Float64
+    epoch_offset(s::SLC) -> Float64
 
 Seconds from midnight of the epoch's own day to the epoch.
 
@@ -41,4 +41,4 @@ of the format rather than a general one.
 """
 epoch_offset(g::RadarGeometry) =
     Dates.value(Dates.Millisecond(g.epoch - Dates.DateTime(Dates.Date(g.epoch)))) / 1000
-epoch_offset(s::AbstractRadar) = epoch_offset(s.geometry)
+epoch_offset(s::AbstractSLC) = epoch_offset(s.geometry)
