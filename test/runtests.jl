@@ -1,6 +1,8 @@
 using SAR
 using Test
 
-@testset "SAR.jl" begin
-    # Write your tests here.
+include("fixture.jl")
+
+@testset verbose = true "SAR.jl" begin
+    @time @testset "NISAR reader" begin include("nisar.jl") end
 end

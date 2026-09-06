@@ -3,5 +3,13 @@ uuid = "1d8f5cac-0b48-4ea8-8d35-4fce00b6c96f"
 authors = ["Alex S. Gardner, JPL/NASA"]
 version = "1.0.0-DEV"
 
+[deps]
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+
 [compat]
+Dates = "1"
+HDF5 = "0.17"
+StaticArrays = "1"
 julia = "1.10"
