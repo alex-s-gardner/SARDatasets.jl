@@ -1,8 +1,8 @@
 # The uniform acquisition type, and the two sensor-neutral metadata records it carries.
 #
 # A SAR product is not a bag of arbitrary named variables — it is a fixed, known set of geometry
-# quantities plus one or more image bands. So the metadata is plain immutable structs rather than a
-# variable/attribute protocol, and only the bulky parts are deferred.
+# quantities. So the metadata is plain immutable structs rather than a variable/attribute protocol, and
+# only the bulky part, the state vectors, is deferred.
 #
 # The field set is what a geometry consumer needs, taken from the two reference loaders in
 # hyp3-autorift's `testGeogrid.py`: `loadMetadataRslc` for NISAR and `loadMetadata` for Sentinel-1.
@@ -160,8 +160,8 @@ One SAR acquisition, read through a sensor backend.
 
 `identification` and `geometry` are parsed when the product is opened: they are a few dozen scalars,
 and a product whose metadata cannot be read is not usable, so failing at `open_sar` is better than
-failing later. The orbit and the image bands are read on first access and then held, since they are
-large enough that a consumer touching only the geometry should not pay for them.
+failing later. The state vectors are read on first access and then held, since a consumer touching only
+the geometry should not pay for them.
 
 Build one with [`open_sar`](@ref) rather than calling this constructor.
 
@@ -170,7 +170,7 @@ Build one with [`open_sar`](@ref) rather than calling this constructor.
 ```julia
 s = open_sar("NISAR_L1_PR_RSLC_....h5")
 s.geometry.starting_range   # already in hand
-s.orbit                     # read on first access
+orbit(s)                    # read on first access
 ```
 """
 mutable struct Radar{B<:AbstractSARBackend} <: AbstractRadar
@@ -178,11 +178,10 @@ mutable struct Radar{B<:AbstractSARBackend} <: AbstractRadar
     const identification::Identification
     const geometry::RadarGeometry
     orbit::Union{Nothing,StateVectors}
-    const bands::Dict{Symbol,Any}
 end
 
 Radar(backend::AbstractSARBackend, ident::Identification, geom::RadarGeometry) =
-    Radar(backend, ident, geom, nothing, Dict{Symbol,Any}())
+    Radar(backend, ident, geom, nothing)
 
 """
     nlines(s::Radar)

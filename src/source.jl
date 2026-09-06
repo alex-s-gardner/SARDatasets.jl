@@ -16,8 +16,7 @@ serves every supported format.
 `frequency` selects the sub-band for a sensor that has them, defaulting to the first the product
 lists.
 
-The identification and geometry records are read here; the orbit and the image bands are read on
-first access.
+The identification and geometry records are read here; the state vectors are read on first access.
 
 # Examples
 
