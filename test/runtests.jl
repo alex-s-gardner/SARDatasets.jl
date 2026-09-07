@@ -2,6 +2,7 @@ using SLCDatasets
 using Test
 
 include("fixture.jl")
+include("sentinel1_fixture.jl")
 
 @testset verbose = true "SLCDatasets.jl" begin
     @time @testset "NISAR reader" begin include("nisar.jl") end

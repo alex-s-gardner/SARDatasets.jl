@@ -72,7 +72,11 @@ position and velocity agree to 0 ULP. For Sentinel-1, against `isce3` + `s1reade
 different missions — every range, spacing, wavelength, PRF and image dimension of the mosaic and of all
 27 bursts agrees bitwise, state vectors agree bitwise, and azimuth times agree to a nanosecond.
 
-`test/reference/dump_sentinel1.py` regenerates the golden values.
+Those comparisons are part of the test suite and need no granule: the annotation fields and state
+vectors each golden value was computed from are committed alongside it, and the products are rebuilt
+from them. `test/reference/dump_sentinel1.py` regenerates the golden values from a granule and
+`test/reference/extract_sentinel1_inputs.jl` the inputs; setting `SLCDATASETS_S1_DIR` to a directory
+holding the granules checks against those directly instead.
 
 ## Sentinel-1
 
