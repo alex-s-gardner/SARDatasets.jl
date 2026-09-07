@@ -1,0 +1,1556 @@
+{
+ "safe": "S1B_IW_SLC__1SSH_20200926T043523_20200926T043550_023541_02CB95_FD4C.zip",
+ "orbit_file": "S1B_OPER_AUX_POEORB_OPOD_20201016T110850_V20200925T225942_20200927T005942.EOF",
+ "polarization": "hh",
+ "isce3_version": "0.25.17",
+ "mosaic": {
+  "swaths": [
+   1,
+   2,
+   3
+  ],
+  "polarization": "hh",
+  "starting_range": {
+   "dec": 816775.221837502,
+   "hex": "0x1.8ed0e7194af60p+19"
+  },
+  "far_range": {
+   "dec": 967926.530088691,
+   "hex": "0x1.d89ed0f67c8f0p+19"
+  },
+  "range_pixel_spacing": {
+   "dec": 2.329562114715323,
+   "hex": "0x1.2a2f176459f91p+1"
+  },
+  "wavelength": {
+   "dec": 0.05546576,
+   "hex": "0x1.c6602127eddacp-5"
+  },
+  "prf": {
+   "dec": 486.48631029955294,
+   "hex": "0x1.e67c7ed4f049bp+8"
+  },
+  "sensing_start": {
+   "dec": 172798.195222,
+   "hex": "0x1.517f18fd08d4cp+17"
+  },
+  "sensing_stop": {
+   "dec": 172825.14562,
+   "hex": "0x1.518c92a3ad18dp+17"
+  },
+  "nlines": 13112,
+  "nsamples": 64885,
+  "look_side": "Right",
+  "sensing_start_utc": "2020-09-26T04:35:23.283812",
+  "sensing_stop_utc": "2020-09-26T04:35:50.234210"
+ },
+ "orbit": {
+  "n": 12,
+  "epoch": "2020-09-24T04:35:25.088590000",
+  "time": [
+   {
+    "dec": 172746.91141,
+    "hex": "0x1.516574a91537ap+17"
+   },
+   {
+    "dec": 172756.91141,
+    "hex": "0x1.516a74a91537ap+17"
+   },
+   {
+    "dec": 172766.91141,
+    "hex": "0x1.516f74a91537ap+17"
+   },
+   {
+    "dec": 172776.91141,
+    "hex": "0x1.517474a91537ap+17"
+   },
+   {
+    "dec": 172786.91141,
+    "hex": "0x1.517974a91537ap+17"
+   },
+   {
+    "dec": 172796.91141,
+    "hex": "0x1.517e74a91537ap+17"
+   },
+   {
+    "dec": 172806.91141,
+    "hex": "0x1.518374a91537ap+17"
+   },
+   {
+    "dec": 172816.91141,
+    "hex": "0x1.518874a91537ap+17"
+   },
+   {
+    "dec": 172826.91141,
+    "hex": "0x1.518d74a91537ap+17"
+   },
+   {
+    "dec": 172836.91141,
+    "hex": "0x1.519274a91537ap+17"
+   },
+   {
+    "dec": 172846.91141,
+    "hex": "0x1.519774a91537ap+17"
+   },
+   {
+    "dec": 172856.91141,
+    "hex": "0x1.519c74a91537ap+17"
+   }
+  ],
+  "position": [
+   [
+    {
+     "dec": -66446.758032,
+     "hex": "-0x1.038ec20e62995p+16"
+    },
+    {
+     "dec": -1107942.550312,
+     "hex": "-0x1.0e7e68ce13f4bp+20"
+    },
+    {
+     "dec": -6994658.735478,
+     "hex": "-0x1.aaeb8af121251p+22"
+    }
+   ],
+   [
+    {
+     "dec": -137078.23468,
+     "hex": "-0x1.0bbb1e09fe868p+17"
+    },
+    {
+     "dec": -1134515.216263,
+     "hex": "-0x1.14fb3375d0310p+20"
+    },
+    {
+     "dec": -6989365.146956,
+     "hex": "-0x1.aa98d4967ba23p+22"
+    }
+   ],
+   [
+    {
+     "dec": -207733.057651,
+     "hex": "-0x1.95ba87611ba3dp+17"
+    },
+    {
+     "dec": -1160858.803723,
+     "hex": "-0x1.1b69acdc0ca60p+20"
+    },
+    {
+     "dec": -6983289.212903,
+     "hex": "-0x1.aa39e4da033e8p+22"
+    }
+   ],
+   [
+    {
+     "dec": -278403.040085,
+     "hex": "-0x1.0fe0c290c0ad0p+18"
+    },
+    {
+     "dec": -1186970.356204,
+     "hex": "-0x1.21c9a5b302f73p+20"
+    },
+    {
+     "dec": -6976431.603591,
+     "hex": "-0x1.a9cebe6a13c25p+22"
+    }
+   ],
+   [
+    {
+     "dec": -349079.988926,
+     "hex": "-0x1.54e5ff4a90471p+18"
+    },
+    {
+     "dec": -1212846.954672,
+     "hex": "-0x1.281aef465625ap+20"
+    },
+    {
+     "dec": -6968793.075654,
+     "hex": "-0x1.a957644d783e0p+22"
+    }
+   ],
+   [
+    {
+     "dec": -419755.705868,
+     "hex": "-0x1.99eaed2cf0f9dp+18"
+    },
+    {
+     "dec": -1238485.717867,
+     "hex": "-0x1.2e5d5b7c621b8p+20"
+    },
+    {
+     "dec": -6960374.471991,
+     "hex": "-0x1.a8d3d9e3519bdp+22"
+    }
+   ],
+   [
+    {
+     "dec": -490421.988294,
+     "hex": "-0x1.deed7f40357a3p+18"
+    },
+    {
+     "dec": -1263883.802617,
+     "hex": "-0x1.3490bcd784ec6p+20"
+    },
+    {
+     "dec": -6951176.721666,
+     "hex": "-0x1.a84422e2fc697p+22"
+    }
+   ],
+   [
+    {
+     "dec": -561070.630236,
+     "hex": "-0x1.11f5d42ae4b02p+19"
+    },
+    {
+     "dec": -1289038.404149,
+     "hex": "-0x1.3ab4e67764f12p+20"
+    },
+    {
+     "dec": -6941200.83979,
+     "hex": "-0x1.a7a8435bf1e8ep+22"
+    }
+   ],
+   [
+    {
+     "dec": -631693.42326,
+     "hex": "-0x1.3471ad8b588e3p+19"
+    },
+    {
+     "dec": -1313946.756386,
+     "hex": "-0x1.40c9ac1a2834dp+20"
+    },
+    {
+     "dec": -6930447.927446,
+     "hex": "-0x1.a7003fb5b4678p+22"
+    }
+   ],
+   [
+    {
+     "dec": -702282.157357,
+     "hex": "-0x1.56e94509118c2p+19"
+    },
+    {
+     "dec": -1338606.132238,
+     "hex": "-0x1.46cee21da597dp+20"
+    },
+    {
+     "dec": -6918919.171568,
+     "hex": "-0x1.a64c1cafaf859p+22"
+    }
+   ],
+   [
+    {
+     "dec": -772828.621892,
+     "hex": "-0x1.795b93e68a0d3p+19"
+    },
+    {
+     "dec": -1363013.843904,
+     "hex": "-0x1.4cc45d80a17b1p+20"
+    },
+    {
+     "dec": -6906615.844841,
+     "hex": "-0x1.a58bdf611dffcp+22"
+    }
+   ],
+   [
+    {
+     "dec": -843324.606561,
+     "hex": "-0x1.9bc79368f29d4p+19"
+    },
+    {
+     "dec": -1387167.243166,
+     "hex": "-0x1.52a9f3e402081p+20"
+    },
+    {
+     "dec": -6893539.305598,
+     "hex": "-0x1.a4bf8d38eeaeap+22"
+    }
+   ]
+  ],
+  "velocity": [
+   [
+    {
+     "dec": -7061.707642,
+     "hex": "-0x1.b95b52806af47p+12"
+    },
+    {
+     "dec": -2668.621041,
+     "hex": "-0x1.4d93df91600f3p+11"
+    },
+    {
+     "dec": 490.221393,
+     "hex": "0x1.ea38ad362e903p+8"
+    }
+   ],
+   [
+    {
+     "dec": -7064.451388,
+     "hex": "-0x1.b98738e29f9cfp+12"
+    },
+    {
+     "dec": -2645.862256,
+     "hex": "-0x1.4abb9799e518fp+11"
+    },
+    {
+     "dec": 568.48658,
+     "hex": "0x1.1c3e4840e171ap+9"
+    }
+   ],
+   [
+    {
+     "dec": -7066.376788,
+     "hex": "-0x1.b9a60752da986p+12"
+    },
+    {
+     "dec": -2622.805961,
+     "hex": "-0x1.47d9ca6eb91b4p+11"
+    },
+    {
+     "dec": 646.689059,
+     "hex": "0x1.43583315d701ep+9"
+    }
+   ],
+   [
+    {
+     "dec": -7067.483176,
+     "hex": "-0x1.b9b7bb16c1e36p+12"
+    },
+    {
+     "dec": -2599.455885,
+     "hex": "-0x1.44ee969c23b79p+11"
+    },
+    {
+     "dec": 724.820192,
+     "hex": "0x1.6a68fc0d2c387p+9"
+    }
+   ],
+   [
+    {
+     "dec": -7067.769983,
+     "hex": "-0x1.b9bc51d9b1b7ap+12"
+    },
+    {
+     "dec": -2575.815788,
+     "hex": "-0x1.41fa1aef6f8f0p+11"
+    },
+    {
+     "dec": 802.871348,
+     "hex": "0x1.916f8854cdb7bp+9"
+    }
+   ],
+   [
+    {
+     "dec": -7067.236728,
+     "hex": "-0x1.b9b3c9a34ca0cp+12"
+    },
+    {
+     "dec": -2551.889465,
+     "hex": "-0x1.3efc767f4dbe0p+11"
+    },
+    {
+     "dec": 880.833905,
+     "hex": "0x1.b86abd66277c4p+9"
+    }
+   ],
+   [
+    {
+     "dec": -7065.883027,
+     "hex": "-0x1.b99e20e0eb67cp+12"
+    },
+    {
+     "dec": -2527.680739,
+     "hex": "-0x1.3bf5c89d27c39p+11"
+    },
+    {
+     "dec": 958.699252,
+     "hex": "0x1.df598116ebd4dp+9"
+    }
+   ],
+   [
+    {
+     "dec": -7063.708587,
+     "hex": "-0x1.b97b565f5275fp+12"
+    },
+    {
+     "dec": -2503.193465,
+     "hex": "-0x1.38e630dd82fd7p+11"
+    },
+    {
+     "dec": 1036.458786,
+     "hex": "0x1.031d5cbff4773p+10"
+    }
+   ],
+   [
+    {
+     "dec": -7060.713208,
+     "hex": "-0x1.b94b694ccab3fp+12"
+    },
+    {
+     "dec": -2478.431528,
+     "hex": "-0x1.35cdcf13cee9ep+11"
+    },
+    {
+     "dec": 1114.103916,
+     "hex": "0x1.1686a68f4b620p+10"
+    }
+   ],
+   [
+    {
+     "dec": -7056.896783,
+     "hex": "-0x1.b90e59392189cp+12"
+    },
+    {
+     "dec": -2453.398842,
+     "hex": "-0x1.32acc3504c48bp+11"
+    },
+    {
+     "dec": 1191.62606,
+     "hex": "0x1.29e8115df6556p+10"
+    }
+   ],
+   [
+    {
+     "dec": -7052.259299,
+     "hex": "-0x1.b8c42616b54e3p+12"
+    },
+    {
+     "dec": -2428.099351,
+     "hex": "-0x1.2f832de225fa6p+11"
+    },
+    {
+     "dec": 1269.016649,
+     "hex": "0x1.3d4110c6f7a0bp+10"
+    }
+   ],
+   [
+    {
+     "dec": -7046.800834,
+     "hex": "-0x1.b86cd0374ff86p+12"
+    },
+    {
+     "dec": -2402.537027,
+     "hex": "-0x1.2c512f533f423p+11"
+    },
+    {
+     "dec": 1346.267128,
+     "hex": "0x1.509118a009f62p+10"
+    }
+   ]
+  ]
+ },
+ "bursts": {
+  "1": [
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:25.088590000",
+    "starting_range": {
+     "dec": 816775.221837502,
+     "hex": "0x1.8ed0e7194af60p+19"
+    },
+    "far_range": {
+     "dec": 863145.1557309105,
+     "hex": "0x1.a57524fbbf63fp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172800.0,
+     "hex": "0x1.5180000000000p+17"
+    },
+    "sensing_stop": {
+     "dec": 172803.08333445,
+     "hex": "0x1.51818aaab408bp+17"
+    },
+    "nlines": 1501,
+    "nsamples": 19906,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:25.088590",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:25.088590000",
+    "starting_range": {
+     "dec": 816775.221837502,
+     "hex": "0x1.8ed0e7194af60p+19"
+    },
+    "far_range": {
+     "dec": 863145.1557309105,
+     "hex": "0x1.a57524fbbf63fp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172802.760612,
+     "hex": "0x1.5181615bbbe88p+17"
+    },
+    "sensing_stop": {
+     "dec": 172805.84394645,
+     "hex": "0x1.5182ec066ff13p+17"
+    },
+    "nlines": 1501,
+    "nsamples": 19906,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:27.849202",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:25.088590000",
+    "starting_range": {
+     "dec": 816775.221837502,
+     "hex": "0x1.8ed0e7194af60p+19"
+    },
+    "far_range": {
+     "dec": 863145.1557309105,
+     "hex": "0x1.a57524fbbf63fp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172805.519169,
+     "hex": "0x1.5182c274213a1p+17"
+    },
+    "sensing_stop": {
+     "dec": 172808.60250345,
+     "hex": "0x1.51844d1ed542cp+17"
+    },
+    "nlines": 1501,
+    "nsamples": 19906,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:30.607759",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:25.088590000",
+    "starting_range": {
+     "dec": 816775.221837502,
+     "hex": "0x1.8ed0e7194af60p+19"
+    },
+    "far_range": {
+     "dec": 863145.1557309105,
+     "hex": "0x1.a57524fbbf63fp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172808.27567,
+     "hex": "0x1.5184234927914p+17"
+    },
+    "sensing_stop": {
+     "dec": 172811.35900445,
+     "hex": "0x1.5185adf3db99fp+17"
+    },
+    "nlines": 1501,
+    "nsamples": 19906,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:33.364260",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:25.088590000",
+    "starting_range": {
+     "dec": 816775.221837502,
+     "hex": "0x1.8ed0e7194af60p+19"
+    },
+    "far_range": {
+     "dec": 863145.1557309105,
+     "hex": "0x1.a57524fbbf63fp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172811.032171,
+     "hex": "0x1.5185841e2de87p+17"
+    },
+    "sensing_stop": {
+     "dec": 172814.11550545,
+     "hex": "0x1.51870ec8e1f12p+17"
+    },
+    "nlines": 1501,
+    "nsamples": 19906,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:36.120761",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:25.088590000",
+    "starting_range": {
+     "dec": 816775.221837502,
+     "hex": "0x1.8ed0e7194af60p+19"
+    },
+    "far_range": {
+     "dec": 863145.1557309105,
+     "hex": "0x1.a57524fbbf63fp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172813.786616,
+     "hex": "0x1.5186e4afd5454p+17"
+    },
+    "sensing_stop": {
+     "dec": 172816.86995045,
+     "hex": "0x1.51886f5a894dfp+17"
+    },
+    "nlines": 1501,
+    "nsamples": 19906,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:38.875206",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:25.088590000",
+    "starting_range": {
+     "dec": 816775.221837502,
+     "hex": "0x1.8ed0e7194af60p+19"
+    },
+    "far_range": {
+     "dec": 863145.1557309105,
+     "hex": "0x1.a57524fbbf63fp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172816.549284,
+     "hex": "0x1.5188464ef0282p+17"
+    },
+    "sensing_stop": {
+     "dec": 172819.63261845,
+     "hex": "0x1.5189d0f9a430dp+17"
+    },
+    "nlines": 1501,
+    "nsamples": 19906,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:41.637874",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:25.088590000",
+    "starting_range": {
+     "dec": 816775.221837502,
+     "hex": "0x1.8ed0e7194af60p+19"
+    },
+    "far_range": {
+     "dec": 863145.1557309105,
+     "hex": "0x1.a57524fbbf63fp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172819.311951,
+     "hex": "0x1.5189a7ee02a78p+17"
+    },
+    "sensing_stop": {
+     "dec": 172822.39528545,
+     "hex": "0x1.518b3298b6b03p+17"
+    },
+    "nlines": 1501,
+    "nsamples": 19906,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:44.400541",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:25.088590000",
+    "starting_range": {
+     "dec": 816775.221837502,
+     "hex": "0x1.8ed0e7194af60p+19"
+    },
+    "far_range": {
+     "dec": 863145.1557309105,
+     "hex": "0x1.a57524fbbf63fp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172822.062286,
+     "hex": "0x1.518b07f8fcd68p+17"
+    },
+    "sensing_stop": {
+     "dec": 172825.14562045,
+     "hex": "0x1.518c92a3b0df3p+17"
+    },
+    "nlines": 1501,
+    "nsamples": 19906,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:47.150876",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   }
+  ],
+  "2": [
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:23.283812000",
+    "starting_range": {
+     "dec": 861300.1425360558,
+     "hex": "0x1.a48e848fa7c64p+19"
+    },
+    "far_range": {
+     "dec": 916543.378524415,
+     "hex": "0x1.bf87ec1cdf3bep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172800.0,
+     "hex": "0x1.5180000000000p+17"
+    },
+    "sensing_stop": {
+     "dec": 172803.0936122315,
+     "hex": "0x1.51818bfb7c506p+17"
+    },
+    "nlines": 1506,
+    "nsamples": 23715,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:23.283812",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:23.283812000",
+    "starting_range": {
+     "dec": 861300.1425360558,
+     "hex": "0x1.a48e848fa7c64p+19"
+    },
+    "far_range": {
+     "dec": 916543.378524415,
+     "hex": "0x1.bf87ec1cdf3bep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172802.756501,
+     "hex": "0x1.518160d506573p+17"
+    },
+    "sensing_stop": {
+     "dec": 172805.85011323149,
+     "hex": "0x1.5182ecd082a79p+17"
+    },
+    "nlines": 1506,
+    "nsamples": 23715,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:26.040313",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:23.283812000",
+    "starting_range": {
+     "dec": 861300.1425360558,
+     "hex": "0x1.a48e848fa7c64p+19"
+    },
+    "far_range": {
+     "dec": 916543.378524415,
+     "hex": "0x1.bf87ec1cdf3bep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172805.519169,
+     "hex": "0x1.5182c274213a1p+17"
+    },
+    "sensing_stop": {
+     "dec": 172808.6127812315,
+     "hex": "0x1.51844e6f9d8a7p+17"
+    },
+    "nlines": 1506,
+    "nsamples": 23715,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:28.802981",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:23.283812000",
+    "starting_range": {
+     "dec": 861300.1425360558,
+     "hex": "0x1.a48e848fa7c64p+19"
+    },
+    "far_range": {
+     "dec": 916543.378524415,
+     "hex": "0x1.bf87ec1cdf3bep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172808.273614,
+     "hex": "0x1.51842305c896ep+17"
+    },
+    "sensing_stop": {
+     "dec": 172811.3672262315,
+     "hex": "0x1.5185af0144e74p+17"
+    },
+    "nlines": 1506,
+    "nsamples": 23715,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:31.557426",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:23.283812000",
+    "starting_range": {
+     "dec": 861300.1425360558,
+     "hex": "0x1.a48e848fa7c64p+19"
+    },
+    "far_range": {
+     "dec": 916543.378524415,
+     "hex": "0x1.bf87ec1cdf3bep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172811.030115,
+     "hex": "0x1.518583daceee1p+17"
+    },
+    "sensing_stop": {
+     "dec": 172814.1237272315,
+     "hex": "0x1.51870fd64b3e7p+17"
+    },
+    "nlines": 1506,
+    "nsamples": 23715,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:34.313927",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:23.283812000",
+    "starting_range": {
+     "dec": 861300.1425360558,
+     "hex": "0x1.a48e848fa7c64p+19"
+    },
+    "far_range": {
+     "dec": 916543.378524415,
+     "hex": "0x1.bf87ec1cdf3bep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172813.784561,
+     "hex": "0x1.5186e46c7eae6p+17"
+    },
+    "sensing_stop": {
+     "dec": 172816.8781732315,
+     "hex": "0x1.51887067fafecp+17"
+    },
+    "nlines": 1506,
+    "nsamples": 23715,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:37.068373",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:23.283812000",
+    "starting_range": {
+     "dec": 861300.1425360558,
+     "hex": "0x1.a48e848fa7c64p+19"
+    },
+    "far_range": {
+     "dec": 916543.378524415,
+     "hex": "0x1.bf87ec1cdf3bep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172816.541062,
+     "hex": "0x1.5188454185059p+17"
+    },
+    "sensing_stop": {
+     "dec": 172819.6346742315,
+     "hex": "0x1.5189d13d0155fp+17"
+    },
+    "nlines": 1506,
+    "nsamples": 23715,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:39.824874",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:23.283812000",
+    "starting_range": {
+     "dec": 861300.1425360558,
+     "hex": "0x1.a48e848fa7c64p+19"
+    },
+    "far_range": {
+     "dec": 916543.378524415,
+     "hex": "0x1.bf87ec1cdf3bep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172819.301674,
+     "hex": "0x1.5189a69d40ee0p+17"
+    },
+    "sensing_stop": {
+     "dec": 172822.39528623148,
+     "hex": "0x1.518b3298bd3e6p+17"
+    },
+    "nlines": 1506,
+    "nsamples": 23715,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:42.585486",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:23.283812000",
+    "starting_range": {
+     "dec": 861300.1425360558,
+     "hex": "0x1.a48e848fa7c64p+19"
+    },
+    "far_range": {
+     "dec": 916543.378524415,
+     "hex": "0x1.bf87ec1cdf3bep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172822.06023,
+     "hex": "0x1.518b07b59ddc2p+17"
+    },
+    "sensing_stop": {
+     "dec": 172825.1538422315,
+     "hex": "0x1.518c93b11a2c8p+17"
+    },
+    "nlines": 1506,
+    "nsamples": 23715,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:45.344042",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   }
+  ],
+  "3": [
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:24.245812000",
+    "starting_range": {
+     "dec": 914605.1828449718,
+     "hex": "0x1.be95a5d9ddb2cp+19"
+    },
+    "far_range": {
+     "dec": 967926.5300886908,
+     "hex": "0x1.d89ed0f67c8eep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172800.0,
+     "hex": "0x1.5180000000000p+17"
+    },
+    "sensing_stop": {
+     "dec": 172803.0936122315,
+     "hex": "0x1.51818bfb7c506p+17"
+    },
+    "nlines": 1506,
+    "nsamples": 22890,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:24.245812",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:24.245812000",
+    "starting_range": {
+     "dec": 914605.1828449718,
+     "hex": "0x1.be95a5d9ddb2cp+19"
+    },
+    "far_range": {
+     "dec": 967926.5300886908,
+     "hex": "0x1.d89ed0f67c8eep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172802.760612,
+     "hex": "0x1.5181615bbbe88p+17"
+    },
+    "sensing_stop": {
+     "dec": 172805.8542242315,
+     "hex": "0x1.5182ed573838ep+17"
+    },
+    "nlines": 1506,
+    "nsamples": 22890,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:27.006424",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:24.245812000",
+    "starting_range": {
+     "dec": 914605.1828449718,
+     "hex": "0x1.be95a5d9ddb2cp+19"
+    },
+    "far_range": {
+     "dec": 967926.5300886908,
+     "hex": "0x1.d89ed0f67c8eep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172805.519169,
+     "hex": "0x1.5182c274213a1p+17"
+    },
+    "sensing_stop": {
+     "dec": 172808.6127812315,
+     "hex": "0x1.51844e6f9d8a7p+17"
+    },
+    "nlines": 1506,
+    "nsamples": 22890,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:29.764981",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:24.245812000",
+    "starting_range": {
+     "dec": 914605.1828449718,
+     "hex": "0x1.be95a5d9ddb2cp+19"
+    },
+    "far_range": {
+     "dec": 967926.5300886908,
+     "hex": "0x1.d89ed0f67c8eep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172808.27567,
+     "hex": "0x1.5184234927914p+17"
+    },
+    "sensing_stop": {
+     "dec": 172811.3692822315,
+     "hex": "0x1.5185af44a3e1ap+17"
+    },
+    "nlines": 1506,
+    "nsamples": 22890,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:32.521482",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:24.245812000",
+    "starting_range": {
+     "dec": 914605.1828449718,
+     "hex": "0x1.be95a5d9ddb2cp+19"
+    },
+    "far_range": {
+     "dec": 967926.5300886908,
+     "hex": "0x1.d89ed0f67c8eep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172811.032171,
+     "hex": "0x1.5185841e2de87p+17"
+    },
+    "sensing_stop": {
+     "dec": 172814.1257832315,
+     "hex": "0x1.51871019aa38dp+17"
+    },
+    "nlines": 1506,
+    "nsamples": 22890,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:35.277983",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:24.245812000",
+    "starting_range": {
+     "dec": 914605.1828449718,
+     "hex": "0x1.be95a5d9ddb2cp+19"
+    },
+    "far_range": {
+     "dec": 967926.5300886908,
+     "hex": "0x1.d89ed0f67c8eep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172813.788672,
+     "hex": "0x1.5186e4f3343fap+17"
+    },
+    "sensing_stop": {
+     "dec": 172816.88228423148,
+     "hex": "0x1.518870eeb0900p+17"
+    },
+    "nlines": 1506,
+    "nsamples": 22890,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:38.034484",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:24.245812000",
+    "starting_range": {
+     "dec": 914605.1828449718,
+     "hex": "0x1.be95a5d9ddb2cp+19"
+    },
+    "far_range": {
+     "dec": 967926.5300886908,
+     "hex": "0x1.d89ed0f67c8eep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172816.541062,
+     "hex": "0x1.5188454185059p+17"
+    },
+    "sensing_stop": {
+     "dec": 172819.6346742315,
+     "hex": "0x1.5189d13d0155fp+17"
+    },
+    "nlines": 1506,
+    "nsamples": 22890,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:40.786874",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:24.245812000",
+    "starting_range": {
+     "dec": 914605.1828449718,
+     "hex": "0x1.be95a5d9ddb2cp+19"
+    },
+    "far_range": {
+     "dec": 967926.5300886908,
+     "hex": "0x1.d89ed0f67c8eep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172819.299618,
+     "hex": "0x1.5189a659e1f3ap+17"
+    },
+    "sensing_stop": {
+     "dec": 172822.39323023148,
+     "hex": "0x1.518b32555e440p+17"
+    },
+    "nlines": 1506,
+    "nsamples": 22890,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:43.545430",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2020-09-24T04:35:24.245812000",
+    "starting_range": {
+     "dec": 914605.1828449718,
+     "hex": "0x1.be95a5d9ddb2cp+19"
+    },
+    "far_range": {
+     "dec": 967926.5300886908,
+     "hex": "0x1.d89ed0f67c8eep+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172822.064341,
+     "hex": "0x1.518b083c536d6p+17"
+    },
+    "sensing_stop": {
+     "dec": 172825.15795323148,
+     "hex": "0x1.518c9437cfbdcp+17"
+    },
+    "nlines": 1506,
+    "nsamples": 22890,
+    "look_side": "Right",
+    "sensing_start_utc": "2020-09-26T04:35:46.310153",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   }
+  ]
+ }
+}

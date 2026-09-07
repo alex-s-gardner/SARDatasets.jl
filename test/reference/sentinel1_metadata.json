@@ -1,0 +1,1556 @@
+{
+ "safe": "S1A_IW_SLC__1SSH_20151120T080202_20151120T080229_008685_00C5A7_105E.zip",
+ "orbit_file": "S1A_OPER_AUX_POEORB_OPOD_20151210T122558_V20151119T225943_20151121T005943.EOF",
+ "polarization": "hh",
+ "isce3_version": "0.25.17",
+ "mosaic": {
+  "swaths": [
+   1,
+   2,
+   3
+  ],
+  "polarization": "hh",
+  "starting_range": {
+   "dec": 813732.255426561,
+   "hex": "0x1.8d54882c7452cp+19"
+  },
+  "far_range": {
+   "dec": 967884.0396815033,
+   "hex": "0x1.d89981451224ep+19"
+  },
+  "range_pixel_spacing": {
+   "dec": 2.329562114715323,
+   "hex": "0x1.2a2f176459f91p+1"
+  },
+  "wavelength": {
+   "dec": 0.05546576,
+   "hex": "0x1.c6602127eddacp-5"
+  },
+  "prf": {
+   "dec": 486.48631029955294,
+   "hex": "0x1.e67c7ed4f049bp+8"
+  },
+  "sensing_start": {
+   "dec": 172798.186999,
+   "hex": "0x1.517f17ef954ebp+17"
+  },
+  "sensing_stop": {
+   "dec": 172825.153842,
+   "hex": "0x1.518c93b1183b6p+17"
+  },
+  "nlines": 13120,
+  "nsamples": 66173,
+  "look_side": "Right",
+  "sensing_start_utc": "2015-11-20T08:02:02.977227",
+  "sensing_stop_utc": "2015-11-20T08:02:29.944070"
+ },
+ "orbit": {
+  "n": 12,
+  "epoch": "2015-11-18T08:02:04.790228000",
+  "time": [
+   {
+    "dec": 172748.209772,
+    "hex": "0x1.51661ad9cf13dp+17"
+   },
+   {
+    "dec": 172758.209772,
+    "hex": "0x1.516b1ad9cf13dp+17"
+   },
+   {
+    "dec": 172768.209772,
+    "hex": "0x1.51701ad9cf13dp+17"
+   },
+   {
+    "dec": 172778.209772,
+    "hex": "0x1.51751ad9cf13dp+17"
+   },
+   {
+    "dec": 172788.209772,
+    "hex": "0x1.517a1ad9cf13dp+17"
+   },
+   {
+    "dec": 172798.209772,
+    "hex": "0x1.517f1ad9cf13dp+17"
+   },
+   {
+    "dec": 172808.209772,
+    "hex": "0x1.51841ad9cf13dp+17"
+   },
+   {
+    "dec": 172818.209772,
+    "hex": "0x1.51891ad9cf13dp+17"
+   },
+   {
+    "dec": 172828.209772,
+    "hex": "0x1.518e1ad9cf13dp+17"
+   },
+   {
+    "dec": 172838.209772,
+    "hex": "0x1.51931ad9cf13dp+17"
+   },
+   {
+    "dec": 172848.209772,
+    "hex": "0x1.51981ad9cf13dp+17"
+   },
+   {
+    "dec": 172858.209772,
+    "hex": "0x1.519d1ad9cf13dp+17"
+   }
+  ],
+  "position": [
+   [
+    {
+     "dec": 1948236.857777,
+     "hex": "0x1.dba4cdb974602p+20"
+    },
+    {
+     "dec": -2203019.07878,
+     "hex": "-0x1.0cec58a15768ap+21"
+    },
+    {
+     "dec": -6442407.980329,
+     "hex": "-0x1.89369febdb5d9p+22"
+    }
+   ],
+   [
+    {
+     "dec": 1884878.803227,
+     "hex": "0x1.cc2cecda048e0p+20"
+    },
+    {
+     "dec": -2173334.315585,
+     "hex": "-0x1.094cb286516dbp+21"
+    },
+    {
+     "dec": -6471285.215174,
+     "hex": "-0x1.8af9d4dc5692bp+22"
+    }
+   ],
+   [
+    {
+     "dec": 1821354.648476,
+     "hex": "0x1.bcaaaa60285ecp+20"
+    },
+    {
+     "dec": -2143315.305934,
+     "hex": "-0x1.05a29a728d866p+21"
+    },
+    {
+     "dec": -6499437.341961,
+     "hex": "-0x1.8cb1b55e2b064p+22"
+    }
+   ],
+   [
+    {
+     "dec": 1757671.955104,
+     "hex": "0x1.ad1e7f481b21cp+20"
+    },
+    {
+     "dec": -2112965.164686,
+     "hex": "-0x1.01ee295146e4cp+21"
+    },
+    {
+     "dec": -6526861.244366,
+     "hex": "-0x1.8e5e34fa3b14bp+22"
+    }
+   ],
+   [
+    {
+     "dec": 1693838.296715,
+     "hex": "0x1.9d88e4bf583a5p+20"
+    },
+    {
+     "dec": -2082287.053896,
+     "hex": "-0x1.fc5ef0dcc20d5p+20"
+    },
+    {
+     "dec": -6553553.887192,
+     "hex": "-0x1.8fff478c7c0f4p+22"
+    }
+   ],
+   [
+    {
+     "dec": 1629861.258071,
+     "hex": "0x1.8dea54210f0e9p+20"
+    },
+    {
+     "dec": -2051284.182479,
+     "hex": "-0x1.f4cd42eb6f199p+20"
+    },
+    {
+     "dec": -6579512.316622,
+     "hex": "-0x1.9194e144388ecp+22"
+    }
+   ],
+   [
+    {
+     "dec": 1565748.434191,
+     "hex": "0x1.7e4346f272431p+20"
+    },
+    {
+     "dec": -2019959.805867,
+     "hex": "-0x1.ed277ce4d4cbap+20"
+    },
+    {
+     "dec": -6604733.660479,
+     "hex": "-0x1.931ef6a4549b6p+22"
+    }
+   ],
+   [
+    {
+     "dec": 1501507.42947,
+     "hex": "0x1.6e9436df1bef5p+20"
+    },
+    {
+     "dec": -1988317.225658,
+     "hex": "-0x1.e56dd39c4b902p+20"
+    },
+    {
+     "dec": -6629215.128475,
+     "hex": "-0x1.949d7c838ef35p+22"
+    }
+   ],
+   [
+    {
+     "dec": 1437145.856808,
+     "hex": "0x1.5edd9db57c4e3p+20"
+    },
+    {
+     "dec": -1956359.789289,
+     "hex": "-0x1.dda07ca0ed80ap+20"
+    },
+    {
+     "dec": -6652954.012527,
+     "hex": "-0x1.9610680cd3e0cp+22"
+    }
+   ],
+   [
+    {
+     "dec": 1372671.336767,
+     "hex": "0x1.4f1ff56365cb3p+20"
+    },
+    {
+     "dec": -1924090.889704,
+     "hex": "-0x1.d5bfae3c3a42fp+20"
+    },
+    {
+     "dec": -6675947.687013,
+     "hex": "-0x1.9777aebf80560p+22"
+    }
+   ],
+   [
+    {
+     "dec": 1308091.49666,
+     "hex": "0x1.3f5bb7f251c19p+20"
+    },
+    {
+     "dec": -1891513.96499,
+     "hex": "-0x1.cdcb9f70995abp+20"
+    },
+    {
+     "dec": -6698193.609051,
+     "hex": "-0x1.98d3466fab10cp+22"
+    }
+   ],
+   [
+    {
+     "dec": 1243413.969658,
+     "hex": "0x1.2f915f83b81b6p+20"
+    },
+    {
+     "dec": -1858632.498012,
+     "hex": "-0x1.c5c487f7db6e5p+20"
+    },
+    {
+     "dec": -6719689.318772,
+     "hex": "-0x1.9a2325466c2adp+22"
+    }
+   ]
+  ],
+  "velocity": [
+   [
+    {
+     "dec": -6327.248724,
+     "hex": "-0x1.8b73fac6045bbp+12"
+    },
+    {
+     "dec": 2951.661356,
+     "hex": "0x1.70f529d40ee07p+11"
+    },
+    {
+     "dec": -2923.872984,
+     "hex": "-0x1.6d7bef7c243ddp+11"
+    }
+   ],
+   [
+    {
+     "dec": -6344.236393,
+     "hex": "-0x1.8c83c84406c01p+12"
+    },
+    {
+     "dec": 2985.24016,
+     "hex": "0x1.7527af640639dp+11"
+    },
+    {
+     "dec": -2851.520691,
+     "hex": "-0x1.6470a9802c0a5p+11"
+    }
+   ],
+   [
+    {
+     "dec": -6360.468542,
+     "hex": "-0x1.8d877f25e56cdp+12"
+    },
+    {
+     "dec": 3018.50985,
+     "hex": "0x1.795050b0f27bbp+11"
+    },
+    {
+     "dec": -2778.852726,
+     "hex": "-0x1.5b5b4988094e6p+11"
+    }
+   ],
+   [
+    {
+     "dec": -6375.94392,
+     "hex": "-0x1.8e7f1a4bdba0ap+12"
+    },
+    {
+     "dec": 3051.46569,
+     "hex": "0x1.7d6ee6eeb7026p+11"
+    },
+    {
+     "dec": -2705.877179,
+     "hex": "-0x1.523c11d9b1b7ap+11"
+    }
+   ],
+   [
+    {
+     "dec": -6390.661366,
+     "hex": "-0x1.8f6a94f483cb0p+12"
+    },
+    {
+     "dec": 3084.102978,
+     "hex": "0x1.81834b9884c6ap+11"
+    },
+    {
+     "dec": -2632.602174,
+     "hex": "-0x1.4913450268901p+11"
+    }
+   ],
+   [
+    {
+     "dec": -6404.619808,
+     "hex": "-0x1.9049eabbcb1cdp+12"
+    },
+    {
+     "dec": 3116.417044,
+     "hex": "0x1.858d586ca89fcp+11"
+    },
+    {
+     "dec": -2559.03586,
+     "hex": "-0x1.3fe125c3dee78p+11"
+    }
+   ],
+   [
+    {
+     "dec": -6417.818263,
+     "hex": "-0x1.911d179af1887p+12"
+    },
+    {
+     "dec": 3148.403252,
+     "hex": "0x1.898ce770bd018p+11"
+    },
+    {
+     "dec": -2485.186417,
+     "hex": "-0x1.36a5f720c8cd6p+11"
+    }
+   ],
+   [
+    {
+     "dec": -6430.255835,
+     "hex": "-0x1.91e417e670e2cp+12"
+    },
+    {
+     "dec": 3180.057001,
+     "hex": "0x1.8d81d2f3c2daep+11"
+    },
+    {
+     "dec": -2411.062052,
+     "hex": "-0x1.2d61fc5479d4ep+11"
+    }
+   ],
+   [
+    {
+     "dec": -6441.931718,
+     "hex": "-0x1.929ee85122318p+12"
+    },
+    {
+     "dec": 3211.373725,
+     "hex": "0x1.916bf58e21965p+11"
+    },
+    {
+     "dec": -2336.670999,
+     "hex": "-0x1.241578d2e514cp+11"
+    }
+   ],
+   [
+    {
+     "dec": -6452.845193,
+     "hex": "-0x1.934d85e9185cfp+12"
+    },
+    {
+     "dec": 3242.348891,
+     "hex": "0x1.954b2a1d755bdp+11"
+    },
+    {
+     "dec": -2262.021518,
+     "hex": "-0x1.1ac0b0468448dp+11"
+    }
+   ],
+   [
+    {
+     "dec": -6462.995631,
+     "hex": "-0x1.93efee1ac57e2p+12"
+    },
+    {
+     "dec": 3272.978004,
+     "hex": "0x1.991f4bcf0b6b7p+11"
+    },
+    {
+     "dec": -2187.121896,
+     "hex": "-0x1.1163e69270b07p+11"
+    }
+   ],
+   [
+    {
+     "dec": -6472.38249,
+     "hex": "-0x1.94861eadd590cp+12"
+    },
+    {
+     "dec": 3303.256604,
+     "hex": "0x1.9ce836199780cp+11"
+    },
+    {
+     "dec": -2111.980446,
+     "hex": "-0x1.07ff5fd04a2fdp+11"
+    }
+   ]
+  ]
+ },
+ "bursts": {
+  "1": [
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:04.790228000",
+    "starting_range": {
+     "dec": 813732.255426561,
+     "hex": "0x1.8d54882c7452cp+19"
+    },
+    "far_range": {
+     "dec": 862960.5620347252,
+     "hex": "0x1.a55e11fc303f8p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172800.0,
+     "hex": "0x1.5180000000000p+17"
+    },
+    "sensing_stop": {
+     "dec": 172803.0853900063,
+     "hex": "0x1.51818aee0f4a4p+17"
+    },
+    "nlines": 1502,
+    "nsamples": 21133,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:04.790228",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:04.790228000",
+    "starting_range": {
+     "dec": 813732.255426561,
+     "hex": "0x1.8d54882c7452cp+19"
+    },
+    "far_range": {
+     "dec": 862960.5620347252,
+     "hex": "0x1.a55e11fc303f8p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172802.756501,
+     "hex": "0x1.518160d506573p+17"
+    },
+    "sensing_stop": {
+     "dec": 172805.8418910063,
+     "hex": "0x1.5182ebc315a17p+17"
+    },
+    "nlines": 1502,
+    "nsamples": 21133,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:07.546729",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:04.790228000",
+    "starting_range": {
+     "dec": 813732.255426561,
+     "hex": "0x1.8d54882c7452cp+19"
+    },
+    "far_range": {
+     "dec": 862960.5620347252,
+     "hex": "0x1.a55e11fc303f8p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172805.513002,
+     "hex": "0x1.5182c1aa0cae6p+17"
+    },
+    "sensing_stop": {
+     "dec": 172808.5983920063,
+     "hex": "0x1.51844c981bf8ap+17"
+    },
+    "nlines": 1502,
+    "nsamples": 21133,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:10.303230",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:04.790228000",
+    "starting_range": {
+     "dec": 813732.255426561,
+     "hex": "0x1.8d54882c7452cp+19"
+    },
+    "far_range": {
+     "dec": 862960.5620347252,
+     "hex": "0x1.a55e11fc303f8p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172808.277725,
+     "hex": "0x1.5184238c7e282p+17"
+    },
+    "sensing_stop": {
+     "dec": 172811.3631150063,
+     "hex": "0x1.5185ae7a8d726p+17"
+    },
+    "nlines": 1502,
+    "nsamples": 21133,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:13.067953",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:04.790228000",
+    "starting_range": {
+     "dec": 813732.255426561,
+     "hex": "0x1.8d54882c7452cp+19"
+    },
+    "far_range": {
+     "dec": 862960.5620347252,
+     "hex": "0x1.a55e11fc303f8p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172811.036282,
+     "hex": "0x1.518584a4e379bp+17"
+    },
+    "sensing_stop": {
+     "dec": 172814.1216720063,
+     "hex": "0x1.51870f92f2c3fp+17"
+    },
+    "nlines": 1502,
+    "nsamples": 21133,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:15.826510",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:04.790228000",
+    "starting_range": {
+     "dec": 813732.255426561,
+     "hex": "0x1.8d54882c7452cp+19"
+    },
+    "far_range": {
+     "dec": 862960.5620347252,
+     "hex": "0x1.a55e11fc303f8p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172813.794838,
+     "hex": "0x1.5186e5bd4067dp+17"
+    },
+    "sensing_stop": {
+     "dec": 172816.8802280063,
+     "hex": "0x1.518870ab4fb21p+17"
+    },
+    "nlines": 1502,
+    "nsamples": 21133,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:18.585066",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:04.790228000",
+    "starting_range": {
+     "dec": 813732.255426561,
+     "hex": "0x1.8d54882c7452cp+19"
+    },
+    "far_range": {
+     "dec": 862960.5620347252,
+     "hex": "0x1.a55e11fc303f8p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172816.551339,
+     "hex": "0x1.5188469246bf0p+17"
+    },
+    "sensing_stop": {
+     "dec": 172819.6367290063,
+     "hex": "0x1.5189d18056094p+17"
+    },
+    "nlines": 1502,
+    "nsamples": 21133,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:21.341567",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:04.790228000",
+    "starting_range": {
+     "dec": 813732.255426561,
+     "hex": "0x1.8d54882c7452cp+19"
+    },
+    "far_range": {
+     "dec": 862960.5620347252,
+     "hex": "0x1.a55e11fc303f8p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172819.309896,
+     "hex": "0x1.5189a7aaac109p+17"
+    },
+    "sensing_stop": {
+     "dec": 172822.3952860063,
+     "hex": "0x1.518b3298bb5adp+17"
+    },
+    "nlines": 1502,
+    "nsamples": 21133,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:24.100124",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW1",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:04.790228000",
+    "starting_range": {
+     "dec": 813732.255426561,
+     "hex": "0x1.8d54882c7452cp+19"
+    },
+    "far_range": {
+     "dec": 862960.5620347252,
+     "hex": "0x1.a55e11fc303f8p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172822.068452,
+     "hex": "0x1.518b08c308febp+17"
+    },
+    "sensing_stop": {
+     "dec": 172825.15384200632,
+     "hex": "0x1.518c93b11848fp+17"
+    },
+    "nlines": 1502,
+    "nsamples": 21133,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:26.858680",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   }
+  ],
+  "2": [
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:02.977227000",
+    "starting_range": {
+     "dec": 858560.0192000279,
+     "hex": "0x1.a338009d49608p+19"
+    },
+    "far_range": {
+     "dec": 916435.6603780154,
+     "hex": "0x1.bf7a7521d1136p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172800.0,
+     "hex": "0x1.5180000000000p+17"
+    },
+    "sensing_stop": {
+     "dec": 172803.0977233441,
+     "hex": "0x1.51818c8232d38p+17"
+    },
+    "nlines": 1508,
+    "nsamples": 24845,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:02.977227",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:02.977227000",
+    "starting_range": {
+     "dec": 858560.0192000279,
+     "hex": "0x1.a338009d49608p+19"
+    },
+    "far_range": {
+     "dec": 916435.6603780154,
+     "hex": "0x1.bf7a7521d1136p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172802.758557,
+     "hex": "0x1.5181611865519p+17"
+    },
+    "sensing_stop": {
+     "dec": 172805.8562803441,
+     "hex": "0x1.5182ed9a98251p+17"
+    },
+    "nlines": 1508,
+    "nsamples": 24845,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:05.735784",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:02.977227000",
+    "starting_range": {
+     "dec": 858560.0192000279,
+     "hex": "0x1.a338009d49608p+19"
+    },
+    "far_range": {
+     "dec": 916435.6603780154,
+     "hex": "0x1.bf7a7521d1136p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172805.517113,
+     "hex": "0x1.5182c230c23fbp+17"
+    },
+    "sensing_stop": {
+     "dec": 172808.61483634412,
+     "hex": "0x1.51844eb2f5133p+17"
+    },
+    "nlines": 1508,
+    "nsamples": 24845,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:08.494340",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:02.977227000",
+    "starting_range": {
+     "dec": 858560.0192000279,
+     "hex": "0x1.a338009d49608p+19"
+    },
+    "far_range": {
+     "dec": 916435.6603780154,
+     "hex": "0x1.bf7a7521d1136p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172808.277725,
+     "hex": "0x1.5184238c7e282p+17"
+    },
+    "sensing_stop": {
+     "dec": 172811.3754483441,
+     "hex": "0x1.5185b00eb0fbap+17"
+    },
+    "nlines": 1508,
+    "nsamples": 24845,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:11.254952",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:02.977227000",
+    "starting_range": {
+     "dec": 858560.0192000279,
+     "hex": "0x1.a338009d49608p+19"
+    },
+    "far_range": {
+     "dec": 916435.6603780154,
+     "hex": "0x1.bf7a7521d1136p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172811.036282,
+     "hex": "0x1.518584a4e379bp+17"
+    },
+    "sensing_stop": {
+     "dec": 172814.1340053441,
+     "hex": "0x1.51871127164d3p+17"
+    },
+    "nlines": 1508,
+    "nsamples": 24845,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:14.013509",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:02.977227000",
+    "starting_range": {
+     "dec": 858560.0192000279,
+     "hex": "0x1.a338009d49608p+19"
+    },
+    "far_range": {
+     "dec": 916435.6603780154,
+     "hex": "0x1.bf7a7521d1136p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172813.792783,
+     "hex": "0x1.5186e579e9d0fp+17"
+    },
+    "sensing_stop": {
+     "dec": 172816.89050634412,
+     "hex": "0x1.518871fc1ca47p+17"
+    },
+    "nlines": 1508,
+    "nsamples": 24845,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:16.770010",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:02.977227000",
+    "starting_range": {
+     "dec": 858560.0192000279,
+     "hex": "0x1.a338009d49608p+19"
+    },
+    "far_range": {
+     "dec": 916435.6603780154,
+     "hex": "0x1.bf7a7521d1136p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172816.551339,
+     "hex": "0x1.5188469246bf0p+17"
+    },
+    "sensing_stop": {
+     "dec": 172819.6490623441,
+     "hex": "0x1.5189d31479928p+17"
+    },
+    "nlines": 1508,
+    "nsamples": 24845,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:19.528566",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:02.977227000",
+    "starting_range": {
+     "dec": 858560.0192000279,
+     "hex": "0x1.a338009d49608p+19"
+    },
+    "far_range": {
+     "dec": 916435.6603780154,
+     "hex": "0x1.bf7a7521d1136p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172819.311951,
+     "hex": "0x1.5189a7ee02a78p+17"
+    },
+    "sensing_stop": {
+     "dec": 172822.40967434412,
+     "hex": "0x1.518b3470357b0p+17"
+    },
+    "nlines": 1508,
+    "nsamples": 24845,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:22.289178",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW2",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:02.977227000",
+    "starting_range": {
+     "dec": 858560.0192000279,
+     "hex": "0x1.a338009d49608p+19"
+    },
+    "far_range": {
+     "dec": 916435.6603780154,
+     "hex": "0x1.bf7a7521d1136p+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172822.068452,
+     "hex": "0x1.518b08c308febp+17"
+    },
+    "sensing_stop": {
+     "dec": 172825.16617534411,
+     "hex": "0x1.518c95453bd23p+17"
+    },
+    "nlines": 1508,
+    "nsamples": 24845,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:25.045679",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   }
+  ],
+  "3": [
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:03.937172000",
+    "starting_range": {
+     "dec": 912223.8120746099,
+     "hex": "0x1.bd6bf9fc83e47p+19"
+    },
+    "far_range": {
+     "dec": 967884.0396815031,
+     "hex": "0x1.d89981451224cp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172800.0,
+     "hex": "0x1.5180000000000p+17"
+    },
+    "sensing_stop": {
+     "dec": 172803.0997789004,
+     "hex": "0x1.51818cc58e150p+17"
+    },
+    "nlines": 1509,
+    "nsamples": 23894,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:03.937172",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:03.937172000",
+    "starting_range": {
+     "dec": 912223.8120746099,
+     "hex": "0x1.bd6bf9fc83e47p+19"
+    },
+    "far_range": {
+     "dec": 967884.0396815031,
+     "hex": "0x1.d89981451224cp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172802.760612,
+     "hex": "0x1.5181615bbbe88p+17"
+    },
+    "sensing_stop": {
+     "dec": 172805.8603909004,
+     "hex": "0x1.5182ee2149fd8p+17"
+    },
+    "nlines": 1509,
+    "nsamples": 23894,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:06.697784",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:03.937172000",
+    "starting_range": {
+     "dec": 912223.8120746099,
+     "hex": "0x1.bd6bf9fc83e47p+19"
+    },
+    "far_range": {
+     "dec": 967884.0396815031,
+     "hex": "0x1.d89981451224cp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172805.521224,
+     "hex": "0x1.5182c2b777d0fp+17"
+    },
+    "sensing_stop": {
+     "dec": 172808.62100290039,
+     "hex": "0x1.51844f7d05e5fp+17"
+    },
+    "nlines": 1509,
+    "nsamples": 23894,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:09.458396",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:03.937172000",
+    "starting_range": {
+     "dec": 912223.8120746099,
+     "hex": "0x1.bd6bf9fc83e47p+19"
+    },
+    "far_range": {
+     "dec": 967884.0396815031,
+     "hex": "0x1.d89981451224cp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172808.277725,
+     "hex": "0x1.5184238c7e282p+17"
+    },
+    "sensing_stop": {
+     "dec": 172811.37750390038,
+     "hex": "0x1.5185b0520c3d2p+17"
+    },
+    "nlines": 1509,
+    "nsamples": 23894,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:12.214897",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:03.937172000",
+    "starting_range": {
+     "dec": 912223.8120746099,
+     "hex": "0x1.bd6bf9fc83e47p+19"
+    },
+    "far_range": {
+     "dec": 967884.0396815031,
+     "hex": "0x1.d89981451224cp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172811.032171,
+     "hex": "0x1.5185841e2de87p+17"
+    },
+    "sensing_stop": {
+     "dec": 172814.1319499004,
+     "hex": "0x1.518710e3bbfd7p+17"
+    },
+    "nlines": 1509,
+    "nsamples": 23894,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:14.969343",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:03.937172000",
+    "starting_range": {
+     "dec": 912223.8120746099,
+     "hex": "0x1.bd6bf9fc83e47p+19"
+    },
+    "far_range": {
+     "dec": 967884.0396815031,
+     "hex": "0x1.d89981451224cp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172813.798949,
+     "hex": "0x1.5186e643f5f91p+17"
+    },
+    "sensing_stop": {
+     "dec": 172816.89872790038,
+     "hex": "0x1.51887309840e1p+17"
+    },
+    "nlines": 1509,
+    "nsamples": 23894,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:17.736121",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:03.937172000",
+    "starting_range": {
+     "dec": 912223.8120746099,
+     "hex": "0x1.bd6bf9fc83e47p+19"
+    },
+    "far_range": {
+     "dec": 967884.0396815031,
+     "hex": "0x1.d89981451224cp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172816.55545,
+     "hex": "0x1.51884718fc505p+17"
+    },
+    "sensing_stop": {
+     "dec": 172819.6552289004,
+     "hex": "0x1.5189d3de8a655p+17"
+    },
+    "nlines": 1509,
+    "nsamples": 23894,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:20.492622",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:03.937172000",
+    "starting_range": {
+     "dec": 912223.8120746099,
+     "hex": "0x1.bd6bf9fc83e47p+19"
+    },
+    "far_range": {
+     "dec": 967884.0396815031,
+     "hex": "0x1.d89981451224cp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172819.311951,
+     "hex": "0x1.5189a7ee02a78p+17"
+    },
+    "sensing_stop": {
+     "dec": 172822.4117299004,
+     "hex": "0x1.518b34b390bc8p+17"
+    },
+    "nlines": 1509,
+    "nsamples": 23894,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:23.249123",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   },
+   {
+    "subswath": "IW3",
+    "polarization": "HH",
+    "epoch": "2015-11-18T08:02:03.937172000",
+    "starting_range": {
+     "dec": 912223.8120746099,
+     "hex": "0x1.bd6bf9fc83e47p+19"
+    },
+    "far_range": {
+     "dec": 967884.0396815031,
+     "hex": "0x1.d89981451224cp+19"
+    },
+    "range_pixel_spacing": {
+     "dec": 2.329562114715323,
+     "hex": "0x1.2a2f176459f91p+1"
+    },
+    "wavelength": {
+     "dec": 0.05546576,
+     "hex": "0x1.c6602127eddacp-5"
+    },
+    "prf": {
+     "dec": 486.48631029955294,
+     "hex": "0x1.e67c7ed4f049bp+8"
+    },
+    "sensing_start": {
+     "dec": 172822.068452,
+     "hex": "0x1.518b08c308febp+17"
+    },
+    "sensing_stop": {
+     "dec": 172825.1682309004,
+     "hex": "0x1.518c95889713bp+17"
+    },
+    "nlines": 1509,
+    "nsamples": 23894,
+    "look_side": "Right",
+    "sensing_start_utc": "2015-11-20T08:02:26.005624",
+    "azimuth_time_interval": {
+     "dec": 0.002055556299999998,
+     "hex": "0x1.0d6d062acbe22p-9"
+    }
+   }
+  ]
+ }
+}
