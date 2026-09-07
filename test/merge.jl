@@ -291,3 +291,20 @@ if !isempty(MERGE_SAFE) && !isempty(MERGE_EOF)
         @test validmask(amp) == mask
     end
 end
+
+# `amplitude` must be exactly `Float32(abs(z))`, since it computes the magnitude directly rather than
+# through `abs` to avoid `hypot`'s overflow guard, which a 16-bit sample cannot need.
+@testset "amplitude is the magnitude of the samples" begin
+    px = Complex{Int16}[0+0im 3+4im; -300+400im typemax(Int16)+typemax(Int16)*im]
+    a = amplitude(px)
+    @test eltype(a) == Float32
+    @test size(a) == size(px)
+    for i in eachindex(px)
+        @test a[i] == Float32(abs(px[i]))
+    end
+    @test a[1:2, 1:2] == [Float32(abs(z)) for z in px]
+    @test a[2, 1] == 500.0f0
+    # A real array is its own magnitude.
+    @test amplitude(Float32[-1 2; 3 -4])[1, 1] == 1.0f0
+    @test parent(amplitude(px)) === px
+end

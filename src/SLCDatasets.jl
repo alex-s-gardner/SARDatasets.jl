@@ -17,15 +17,21 @@ transferring it.
 
 Sentinel-1 IW SLCs are read from a `.SAFE` directory or the zip of one, taking geometry from the
 annotation XML and state vectors from a POEORB or RESORB `.EOF` file, which a Sentinel-1 product does
-not carry. Only the annotation is read, so the measurement TIFFs cost nothing. A TOPS product is three
-subswaths of bursts rather than one image; [`open_slc`](@ref) describes either the mosaic across them or
-one individual burst.
+not carry. A geometry costs the annotation alone, so a zip need not be unpacked to read one. A TOPS
+product is three subswaths of bursts rather than one image; [`open_slc`](@ref) describes either the
+mosaic across them or one individual burst.
 
 An annotation document is a couple of megabytes holding a few dozen scalars, so a product's subswaths
 are parsed once into a [`Sentinel1Product`](@ref) and every geometry, burst and orbit derived from it
 reads nothing further. [`bursts`](@ref) returns a whole subswath's bursts as an
 [`SLCSeries`](@ref) — an `AbstractVector` of [`SLC`](@ref)s over that one parse, rather than one
 `open_slc` and one parse per burst.
+
+[`merge_bursts`](@ref) folds those bursts into one acquisition, placing them on a single uniform azimuth
+grid so that a line's time is `sensing_start + line / prf` throughout. [`pixels`](@ref) and
+[`amplitude`](@ref) read its samples as they are indexed, and [`validmask`](@ref) says which of them
+were imaged. Samples need an unpacked `.SAFE`: inside a zip the raster is deflated, so a line is not
+addressable without inflating everything before it.
 """
 module SLCDatasets
 
