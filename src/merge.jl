@@ -99,26 +99,45 @@ function _merge_backend(s::AbstractSLC, i::Integer)
         "Sentinel-1 bursts merge"))
 end
 
-# Which burst of which subswath a backend describes, whatever delivered it.
+# Which burst of which subswath a backend describes, whatever delivered it, and which product it
+# describes it from. `_burst_source` is what a burst must agree on for the merge to be placing bursts of
+# one acquisition: the granule for an ASF burst, the container for a `.SAFE` one.
 _burst_index(b::Sentinel1Backend) = b.burst::Int
 _burst_index(b::AsfBurstBackend) = b.source.burst
 _burst_swath(b::Sentinel1Backend) = b.swath::Int
 _burst_swath(b::AsfBurstBackend) = b.source.swath
 _orbit_path(b::Sentinel1Backend) = b.product.orbit_path
 _orbit_path(b::AsfBurstBackend) = b.orbit_path
+_burst_source(b::Sentinel1Backend) = b.product.path
+_burst_source(b::AsfBurstBackend) = b.source.slc
+_burst_polarization(b::Sentinel1Backend) = lowercase(b.product.polarization)
+_burst_polarization(b::AsfBurstBackend) = lowercase(b.source.polarization)
 
 # The one subswath and consecutive burst range the given bursts amount to.
 function _merge_extent(backends::AbstractVector)
     swath = _burst_swath(first(backends))
     same = typeof(first(backends))
+    source = _burst_source(first(backends))
+    polarization = _burst_polarization(first(backends))
     for (i, b) in enumerate(backends)
         b isa same || throw(ArgumentError(
             "burst $i is a $(nameof(typeof(b))) but the first a $(nameof(same)); bursts reached " *
             "different ways are not known to come from one product"))
+        # Consecutive burst numbers of two products are not consecutive bursts of anything. Two slices
+        # of one datatake share an absolute orbit and a range origin, so nothing further downstream
+        # would catch it: the grid would place one product's bursts by the other's annotation.
+        _burst_source(b) == source || throw(ArgumentError(
+            "burst $i comes from `$(_burst_source(b))` but the first from `$source`; bursts of " *
+            "different products describe different acquisitions and do not merge"))
         _burst_swath(b) == swath || throw(ArgumentError(
             "burst $i is in subswath IW$(_burst_swath(b)) but the first in IW$swath. Subswaths " *
             "lie at different slant ranges, so merging them would need one range origin for two, " *
             "and their samples are not on one grid"))
+        # Two channels of one subswath share their mission, orbit and range geometry, so this is the
+        # only check that separates them; merging them would interleave two channels' samples.
+        _burst_polarization(b) == polarization || throw(ArgumentError(
+            "burst $i is polarization $(uppercase(_burst_polarization(b))) but the first " *
+            "$(uppercase(polarization)); a merged subswath carries one channel"))
     end
 
     idx = [_burst_index(b) for b in backends]
@@ -140,9 +159,9 @@ function _merge_orbit_path(backends::AbstractVector)
     return path
 end
 
-# The bursts must agree on what they are, not merely on where they came from. A caller reaching a
-# `Sentinel1Product` directly could build bursts from one product with differing polarizations, and the
-# geometry would then be a blend of two channels.
+# What the bursts report about themselves, against the annotation the grid is built from. `_merge_extent`
+# has already established they name one product, subswath and channel; this catches an acquisition whose
+# own geometry does not match that annotation, which a caller assembling backends by hand could produce.
 function _check_merge_agreement(slcs, a::SubswathAnnotation, swath::Integer)
     ref = first(slcs).identification
     for (i, s) in enumerate(slcs)

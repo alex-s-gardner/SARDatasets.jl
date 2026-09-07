@@ -16,7 +16,7 @@ using SLCDatasets
 using SLCDatasets: MergedBurstBackend, ConcatenatedBursts, BurstValidMask, Amplitude,
                    read_annotation, annotation_xml, burst_grid, measurement_path, open_tiff,
                    Sentinel1Product, UtcTime, seconds_between, valid_lines, valid_samples,
-                   MAX_BURST_GRID_RESIDUAL, grid
+                   MAX_BURST_GRID_RESIDUAL, grid, safe_polarizations
 using Test
 
 # A merged acquisition needs only annotation, so these run against every committed case.
@@ -162,6 +162,35 @@ if !isempty(S1_PRODUCTS)
         # The mosaic across subswaths is not a burst of one.
         mosaic = open_slc(p.safe; orbit = p.eof, polarization = pol)
         @test_throws "rather than a burst" merge_bursts([mosaic])
+
+        # Bursts of two products are not consecutive bursts of anything, even when they agree on
+        # everything a burst reports: two slices of one datatake share an absolute orbit and a range
+        # origin, so nothing downstream would catch it and the grid would place one product's bursts
+        # by the other's annotation.
+        mktempdir() do dir
+            other = joinpath(dir, "same-content.SAFE")
+            isdir(p.safe) ? symlink(p.safe, other) : cp(p.safe, other)
+            twin = bursts(other; orbit = p.eof, swath = 2, polarization = pol)
+            @test twin[1].identification == b2[1].identification
+            @test twin[1].geometry == b2[1].geometry
+            @test_throws "different products" merge_bursts([b2[1], twin[2]])
+        end
+
+        # One acquisition has one orbit, so bursts taking their state vectors from different files are
+        # not one acquisition however well their annotation agrees.
+        if length(S1_PRODUCTS) > 1
+            elsewhere = bursts(p.safe; orbit = last(S1_PRODUCTS).eof, swath = 2, polarization = pol)
+            @test_throws "state vectors from" merge_bursts([b2[1], elsewhere[2]])
+        end
+
+        # Two channels of a subswath share their mission, orbit and range geometry, so nothing but the
+        # polarization separates them; merging them would interleave two channels' samples.
+        pols = safe_polarizations(p.safe)
+        if length(pols) > 1
+            other_pol = first(filter(!=(pol), pols))
+            crossed = bursts(p.safe; orbit = p.eof, swath = 2, polarization = other_pol)
+            @test_throws "carries one channel" merge_bursts([b2[1], crossed[2]])
+        end
     end
 
     @testset "an acquisition with no raster says so" begin
