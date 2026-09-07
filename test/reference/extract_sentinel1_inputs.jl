@@ -18,11 +18,34 @@ using SLCDatasets: annotation_xml, parse_utc, seconds_between, UtcTime, S1_ORBIT
 
 const GOLDEN = ["sentinel1_metadata.json", "sentinel1_metadata_s1b.json"]
 
+# The valid region of one burst, as the four numbers the per-line arrays reduce to.
+#
+# Storing the arrays verbatim would be some forty thousand integers per granule to record a rectangle.
+# They are constant across a burst's valid lines in every granule measured — `read_valid_region`
+# checks that rather than assuming it — so the rectangle is what is kept, and the fixture writes arrays
+# back out from it.
+function burst_valid_region(node)
+    first_sample = [parse(Int, s) for s in eachsplit(_findtext(node, "firstValidSample"))]
+    last_sample = [parse(Int, s) for s in eachsplit(_findtext(node, "lastValidSample"))]
+    lines = findall(>=(0), first_sample)
+    lo, hi = first(lines), last(lines)
+    return Dict{String,Any}(
+        # 1-based line indices into the burst, as the arrays are indexed here.
+        "firstValidLine" => lo,
+        "lastValidLine" => hi,
+        # The annotation's own 0-based sample bounds.
+        "firstValidSample" => first_sample[lo],
+        "lastValidSample" => last_sample[lo],
+    )
+end
+
 # The annotation fields `read_annotation` reads, and nothing else.
 function subswath_inputs(xml::AbstractString)
     r = root(parsexml(xml))
-    bursts = [_findtext(b, "azimuthTime") for b in findall("swathTiming/burstList/burst", r)]
+    burst_nodes = findall("swathTiming/burstList/burst", r)
+    bursts = [_findtext(b, "azimuthTime") for b in burst_nodes]
     return Dict{String,Any}(
+        "burstValidRegions" => [burst_valid_region(b) for b in burst_nodes],
         "polarisation" => _findtext(r, "adsHeader/polarisation"),
         "absoluteOrbitNumber" => _findtext(r, "adsHeader/absoluteOrbitNumber"),
         "missionId" => _findtext(r, "adsHeader/missionId"),

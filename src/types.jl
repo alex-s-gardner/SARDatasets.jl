@@ -35,6 +35,33 @@ product family; it does not know how the bytes are reached — that is an
 abstract type AbstractSLCBackend end
 
 """
+    AbstractBurstBackend <: AbstractSLCBackend
+
+One burst of a TOPS acquisition, however it was delivered.
+
+A Sentinel-1 product is distributed both as a whole `.SAFE`, whose bursts are stacked in one raster per
+subswath, and as one file per burst. Both describe the same thing, so a backend of either kind answers
+the same five questions — [`burst_index`](@ref), [`burst_swath`](@ref), [`burst_polarization`](@ref),
+[`burst_source`](@ref) and [`orbit_path`](@ref) — and merging asks those rather than naming the formats
+it knows.
+"""
+abstract type AbstractBurstBackend <: AbstractSLCBackend end
+
+"""
+    burst_index(b::AbstractBurstBackend) -> Int
+    burst_swath(b::AbstractBurstBackend) -> Int
+    burst_polarization(b::AbstractBurstBackend) -> String
+    burst_source(b::AbstractBurstBackend) -> String
+    orbit_path(b::AbstractBurstBackend) -> String
+
+Which burst of which subswath and channel a backend describes, of which product, with which orbit.
+
+`burst_source` names the product the burst belongs to, so that bursts of two products are not taken for
+consecutive bursts of one; the polarization is lowercase.
+"""
+burst_index, burst_swath, burst_polarization, burst_source, orbit_path
+
+"""
     AbstractSLCSource
 
 Where a product's bytes come from. [`LocalFile`](@ref) is the only route that needs no network; see

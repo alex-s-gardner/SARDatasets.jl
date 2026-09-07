@@ -95,8 +95,8 @@ nbursts(safe; swath = 2)                                    # 9
 
 A TOPS product is three subswaths of bursts at different slant ranges rather than one image, so there
 are two defensible geometries and both are available: the mosaic spanning the subswaths, and a single
-burst. Only the annotation XML is read, so the measurement TIFFs cost nothing and a zip need not be
-unpacked.
+burst. Reading a geometry touches the annotation XML alone, so the measurement rasters cost nothing and
+a zip need not be unpacked; the samples are read only when asked for.
 
 To work through a subswath's bursts, `bursts` parses the annotation once and returns them as an
 `AbstractVector` of `SLC`s, where a call to `open_slc` per burst would re-read the product each time.
@@ -108,7 +108,71 @@ b[3].geometry.starting_range               # built on indexing
 [nlines(s) for s in b]
 ```
 
-A `Sentinel1Product` is the parsed product itself, when several subswaths are wanted from one read:
+### One image from a subswath's bursts
+
+`merge_bursts` folds a vector of bursts into a single `SLC`. Whatever vector you have is the selection,
+so a whole subswath or a slice of one merges directly:
+
+```julia
+b = bursts(safe; orbit = eof, swath = 2)
+ref = merge_bursts(b)                       # across the subswath
+ref = merge_bursts(b[3:7])                  # five of its bursts
+
+amplitude(ref)[1:512, 1:512]                # this window, and no more of the product
+validmask(ref)                              # which samples were imaged
+```
+
+The bursts are placed on one uniform azimuth time axis, with the overlap between neighbours divided at
+its midpoint rather than repeated. A line's azimuth time is then `sensing_start + line / prf`
+throughout, which is what `RadarGeometry` means by `prf`. Stacking whole bursts instead — what a
+`.SAFE` measurement raster holds, and what
+[burst2safe](https://github.com/ASFHyP3/burst2safe) writes — breaks that relation at every seam, by
+about 166 lines each and some 1330 lines by the last. The merged image is correspondingly shorter:
+12244 lines against 13572 stacked, for the granule the tests run on.
+
+Placing a burst is a copy rather than a resampling. A burst's start lands on the shared axis within
+2.2e-4 of a line on every granule measured, so the offset is a whole number of rows; the residual is
+checked rather than assumed. The azimuth arithmetic reproduces hyp3-autorift's `merge_bursts_in_swath`
+placement for placement, with one deliberate difference: the reference slices range samples with an
+exclusive end against an inclusive index and so drops the last valid sample of every burst, which this
+keeps.
+
+Only each burst's valid region is placed. The margin around it is not zeroed in the file, so a reader
+that copied whole bursts would admit samples the processor never imaged; outside every region the image
+reads zero and `validmask` is `false`. A sample that *was* imaged can be zero too, which is why the mask
+is what a correlator should be given rather than a test against zero.
+
+Samples are read as they are indexed, so a subswath costs the windows taken from it and not its size.
+Index with ranges where the shape of the read allows — a window is one read per burst it spans, about
+four times faster per sample than resolving a row at a time.
+
+Pixels need an unpacked `.SAFE`. Inside a zip the raster is deflated, so a line is not addressable
+without inflating everything before it; `pixels` says so and names unpacking as the fix. Reading a
+zipped product's metadata is unaffected.
+
+### Bursts from ASF
+
+ASF's burst extractor serves an SLC as its individual bursts, so a few bursts of a subswath can be had
+without the several gigabytes of the whole product:
+
+```julia
+b = asf_bursts("S1A_IW_SLC__1SSH_20151120T080202_...", 2, "HH", 3:5; orbit = eof, dir = "bursts")
+ref = merge_bursts(b)
+```
+
+Bursts are numbered from 1 here as everywhere else in this package, and the conversion to the
+extractor's 0-based URLs happens inside. Authentication is from `~/.netrc`, as for `RemoteHTTP`. The
+extractor builds a burst on first request and answers `202` until it is ready, which is retried; `dir`
+is where the files are kept, and one already there is not fetched again.
+
+A merge of ASF bursts and a merge of the same bursts from a `.SAFE` give the same array — verified
+sample for sample, including across seams — so which delivery format you have does not change what you
+read. What differs is that each ASF file holds one burst, where a `.SAFE` raster holds a subswath's
+bursts stacked.
+
+### A `Sentinel1Product`
+
+The parsed product itself, when several subswaths are wanted from one read:
 
 ```julia
 p = Sentinel1Product(safe; orbit = eof)    # subswaths 1-3, parsed once
@@ -122,7 +186,12 @@ records.
 
 ## Scope
 
-SLCs in radar geometry: NISAR-format HDF5 (RSLC) and Sentinel-1 IW SLC.
+SLCs in radar geometry: NISAR-format HDF5 (RSLC) and Sentinel-1 IW SLC. Metadata for both; samples for a
+merged Sentinel-1 subswath, from an unpacked `.SAFE`.
+
+Mosaicking across subswaths is metadata only. IW1–3 lie at different slant ranges, so one
+`starting_range` and one `prf` cannot describe their samples without resampling them onto a common grid,
+and a merged image is per-subswath for that reason.
 
 Other SAR products are out of scope rather than unimplemented. An interferogram (RIFG, RUNW) or a
 covariance product (GCOV) carries a multilooked grid, and a geocoded SLC (GSLC) carries map coordinates
