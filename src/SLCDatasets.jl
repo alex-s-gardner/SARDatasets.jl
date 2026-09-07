@@ -50,8 +50,10 @@ export LocalFile, RemoteHTTP, RemoteS3
 include("util.jl")
 include("time.jl")
 include("types.jl")
+include("tiff.jl")
 include("nisar.jl")
 include("sentinel1.jl")
+include("burstgrid.jl")
 # `remote.jl` before `source.jl`: the remote sources are what `open_slc` dispatches on.
 include("remote.jl")
 include("source.jl")

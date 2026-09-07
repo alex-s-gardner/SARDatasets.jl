@@ -213,6 +213,9 @@ end
 _findfloat(node, path) = parse(Float64, _findtext(node, path))
 _findint(node, path) = parse(Int, _findtext(node, path))
 
+# A whitespace-separated list of integers, as the per-line valid-sample arrays are written.
+_findints(node, path) = [parse(Int, s) for s in eachsplit(_findtext(node, path))]
+
 # The epoch a product's times are reported against, truncated to the whole second.
 #
 # The reference's epoch is the anchor instant less two days exactly, keeping its microseconds; a
@@ -245,9 +248,85 @@ struct SubswathAnnotation
     lines_per_burst::Int
     samples_per_burst::Int
     burst_start::Vector{UtcTime}
+    # The valid region of each burst, parallel to `burst_start`. See `read_valid_region`; these are
+    # 1-based inclusive bounds into the burst's own `lines_per_burst` x `samples_per_burst` extent.
+    first_valid_line::Vector{Int}
+    last_valid_line::Vector{Int}
+    first_valid_sample::Vector{Int}
+    last_valid_sample::Vector{Int}
 end
 
 nbursts(a::SubswathAnnotation) = length(a.burst_start)
+
+"""
+    valid_lines(a::SubswathAnnotation, burst) -> UnitRange{Int}
+    valid_samples(a::SubswathAnnotation, burst) -> UnitRange{Int}
+
+The rows and columns of one burst that carry data, as 1-based inclusive ranges.
+
+A burst's raster is `lines_per_burst` by `samples_per_burst`, but only this sub-rectangle of it was
+imaged; the margin outside carries whatever the processor left there, which is not zero. So a reader
+combining bursts must clip to these, and a caller reading a burst's raster directly gets the margin
+unless it does.
+"""
+valid_lines(a::SubswathAnnotation, burst::Integer) =
+    a.first_valid_line[burst]:a.last_valid_line[burst]
+valid_samples(a::SubswathAnnotation, burst::Integer) =
+    a.first_valid_sample[burst]:a.last_valid_sample[burst]
+
+# The valid region of one burst, from the per-line `firstValidSample`/`lastValidSample` arrays.
+#
+# Each array holds one entry per line of the burst, negative where the line carries nothing. This
+# reduces them to a rectangle the way `s1reader`'s `burst_from_xml` does: the valid lines are the run
+# of non-negative entries, and the sample bounds are taken from the *first and last* of those lines
+# only — the widest start and the narrowest end of the two, so the rectangle is inside both.
+#
+# Reading only two lines would silently widen the rectangle if an interior line were narrower than
+# both, so that is checked rather than assumed: the arrays are constant across the valid lines of
+# every granule measured, and a product where they are not would otherwise contribute margin samples
+# as though they were data.
+function read_valid_region(node, swath::Integer, burst::Integer, lines_per_burst::Integer)
+    first_sample = _findints(node, "firstValidSample")
+    last_sample = _findints(node, "lastValidSample")
+
+    length(first_sample) == lines_per_burst || throw(ArgumentError(
+        "burst $burst of subswath IW$swath gives $(length(first_sample)) `firstValidSample` " *
+        "entries for $lines_per_burst lines; there must be one per line"))
+    length(last_sample) == length(first_sample) || throw(ArgumentError(
+        "burst $burst of subswath IW$swath gives $(length(first_sample)) `firstValidSample` " *
+        "entries but $(length(last_sample)) `lastValidSample` entries; there must be one of each " *
+        "per line"))
+
+    lines = findall(>=(0), first_sample)
+    isempty(lines) && throw(ArgumentError(
+        "burst $burst of subswath IW$swath has no valid lines, so it carries no data"))
+    # A valid region split into several runs is not a rectangle, and reducing it to one would claim
+    # lines that carry nothing.
+    lines == first(lines):last(lines) || throw(ArgumentError(
+        "burst $burst of subswath IW$swath marks valid lines in more than one run " *
+        "($(length(lines)) lines between $(first(lines)) and $(last(lines))), so its valid region " *
+        "is not a rectangle"))
+
+    lo, hi = first(lines), last(lines)
+    first_valid = max(first_sample[lo], first_sample[hi])
+    last_valid = min(last_sample[lo], last_sample[hi])
+    first_valid <= last_valid || throw(ArgumentError(
+        "burst $burst of subswath IW$swath has no sample valid on both its first and last valid " *
+        "line, so its valid region is empty"))
+
+    for i in lines
+        (first_sample[i] == first_sample[lo] && last_sample[i] == last_sample[lo]) || throw(
+            ArgumentError(
+                "burst $burst of subswath IW$swath varies its valid sample range from " *
+                "$(first_sample[lo])-$(last_sample[lo]) on line $lo to " *
+                "$(first_sample[i])-$(last_sample[i]) on line $i. This reader takes a burst's " *
+                "valid region to be a rectangle, which it is in every product measured"))
+    end
+
+    # `lo` and `hi` index the per-line arrays and so already count from one; the sample bounds are the
+    # annotation's own values, which count from zero.
+    return lo, hi, first_valid + 1, last_valid + 1
+end
 
 function read_annotation(xml::AbstractString, swath::Integer)
     doc = parsexml(xml)
@@ -260,9 +339,18 @@ function read_annotation(xml::AbstractString, swath::Integer)
     bursts = findall("swathTiming/burstList/burst", r)
     isempty(bursts) && throw(ArgumentError(
         "the annotation for subswath IW$swath lists no bursts"))
-    burst_start = Vector{UtcTime}(undef, length(bursts))
+    lines_per_burst = _findint(r, "swathTiming/linesPerBurst")
+
+    n = length(bursts)
+    burst_start = Vector{UtcTime}(undef, n)
+    first_valid_line = Vector{Int}(undef, n)
+    last_valid_line = Vector{Int}(undef, n)
+    first_valid_sample = Vector{Int}(undef, n)
+    last_valid_sample = Vector{Int}(undef, n)
     for (i, b) in enumerate(bursts)
         burst_start[i] = parse_utc(_findtext(b, "azimuthTime"))
+        first_valid_line[i], last_valid_line[i], first_valid_sample[i], last_valid_sample[i] =
+            read_valid_region(b, swath, i, lines_per_burst)
     end
 
     # These three conversions must not be reordered: they reproduce ISCE3's values to the bit, and a
@@ -278,9 +366,13 @@ function read_annotation(xml::AbstractString, swath::Integer)
         SPEED_OF_LIGHT / (2 * range_sampling_rate),
         SPEED_OF_LIGHT / radar_frequency,
         _findfloat(r, "imageAnnotation/imageInformation/azimuthTimeInterval"),
-        _findint(r, "swathTiming/linesPerBurst"),
+        lines_per_burst,
         _findint(r, "swathTiming/samplesPerBurst"),
         burst_start,
+        first_valid_line,
+        last_valid_line,
+        first_valid_sample,
+        last_valid_sample,
     )
 end
 

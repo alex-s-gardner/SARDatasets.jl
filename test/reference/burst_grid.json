@@ -1,0 +1,642 @@
+{
+ "S1A_IW_SLC__1SSH_20151120T080202_20151120T080229_008685_00C5A7_105E.zip": {
+  "1": {
+   "lines_per_burst": 1502,
+   "num_az_lines": 12238,
+   "rows": [
+    {
+     "burst": 1,
+     "burst_end": 1423,
+     "burst_start": 19,
+     "eff_burst_end": 1423,
+     "eff_merge_end": 1423,
+     "first_valid_sample": 764,
+     "last_valid_sample": 20532,
+     "merge_end": 1423,
+     "merge_start": 19
+    },
+    {
+     "burst": 2,
+     "burst_end": 1424,
+     "burst_start": 82,
+     "eff_burst_end": 1423,
+     "eff_merge_end": 2764,
+     "first_valid_sample": 764,
+     "last_valid_sample": 20532,
+     "merge_end": 2765,
+     "merge_start": 1423
+    },
+    {
+     "burst": 3,
+     "burst_end": 1425,
+     "burst_start": 82,
+     "eff_burst_end": 1424,
+     "eff_merge_end": 4106,
+     "first_valid_sample": 764,
+     "last_valid_sample": 20532,
+     "merge_end": 4107,
+     "merge_start": 2764
+    },
+    {
+     "burst": 4,
+     "burst_end": 1424,
+     "burst_start": 79,
+     "eff_burst_end": 1423,
+     "eff_merge_end": 5450,
+     "first_valid_sample": 764,
+     "last_valid_sample": 20532,
+     "merge_end": 5451,
+     "merge_start": 4106
+    },
+    {
+     "burst": 5,
+     "burst_end": 1423,
+     "burst_start": 81,
+     "eff_burst_end": 1423,
+     "eff_merge_end": 6792,
+     "first_valid_sample": 764,
+     "last_valid_sample": 20532,
+     "merge_end": 6792,
+     "merge_start": 5450
+    },
+    {
+     "burst": 6,
+     "burst_end": 1423,
+     "burst_start": 81,
+     "eff_burst_end": 1422,
+     "eff_merge_end": 8133,
+     "first_valid_sample": 764,
+     "last_valid_sample": 20532,
+     "merge_end": 8134,
+     "merge_start": 6792
+    },
+    {
+     "burst": 7,
+     "burst_end": 1423,
+     "burst_start": 81,
+     "eff_burst_end": 1423,
+     "eff_merge_end": 9475,
+     "first_valid_sample": 870,
+     "last_valid_sample": 20638,
+     "merge_end": 9475,
+     "merge_start": 8133
+    },
+    {
+     "burst": 8,
+     "burst_end": 1424,
+     "burst_start": 81,
+     "eff_burst_end": 1423,
+     "eff_merge_end": 10817,
+     "first_valid_sample": 870,
+     "last_valid_sample": 20638,
+     "merge_end": 10818,
+     "merge_start": 9475
+    },
+    {
+     "burst": 9,
+     "burst_end": 1485,
+     "burst_start": 81,
+     "eff_burst_end": 1485,
+     "eff_merge_end": 12221,
+     "first_valid_sample": 870,
+     "last_valid_sample": 20638,
+     "merge_end": 12221,
+     "merge_start": 10817
+    }
+   ],
+   "samples_per_burst": 21133
+  },
+  "2": {
+   "lines_per_burst": 1508,
+   "num_az_lines": 12244,
+   "rows": [
+    {
+     "burst": 1,
+     "burst_end": 1426,
+     "burst_start": 26,
+     "eff_burst_end": 1426,
+     "eff_merge_end": 1426,
+     "first_valid_sample": 684,
+     "last_valid_sample": 24293,
+     "merge_end": 1426,
+     "merge_start": 26
+    },
+    {
+     "burst": 2,
+     "burst_end": 1426,
+     "burst_start": 84,
+     "eff_burst_end": 1426,
+     "eff_merge_end": 2768,
+     "first_valid_sample": 684,
+     "last_valid_sample": 24293,
+     "merge_end": 2768,
+     "merge_start": 1426
+    },
+    {
+     "burst": 3,
+     "burst_end": 1427,
+     "burst_start": 84,
+     "eff_burst_end": 1427,
+     "eff_merge_end": 4111,
+     "first_valid_sample": 684,
+     "last_valid_sample": 24293,
+     "merge_end": 4111,
+     "merge_start": 2768
+    },
+    {
+     "burst": 4,
+     "burst_end": 1426,
+     "burst_start": 84,
+     "eff_burst_end": 1426,
+     "eff_merge_end": 5453,
+     "first_valid_sample": 684,
+     "last_valid_sample": 24293,
+     "merge_end": 5453,
+     "merge_start": 4111
+    },
+    {
+     "burst": 5,
+     "burst_end": 1426,
+     "burst_start": 84,
+     "eff_burst_end": 1425,
+     "eff_merge_end": 6794,
+     "first_valid_sample": 684,
+     "last_valid_sample": 24293,
+     "merge_end": 6795,
+     "merge_start": 5453
+    },
+    {
+     "burst": 6,
+     "burst_end": 1427,
+     "burst_start": 84,
+     "eff_burst_end": 1427,
+     "eff_merge_end": 8137,
+     "first_valid_sample": 684,
+     "last_valid_sample": 24293,
+     "merge_end": 8137,
+     "merge_start": 6794
+    },
+    {
+     "burst": 7,
+     "burst_end": 1427,
+     "burst_start": 85,
+     "eff_burst_end": 1427,
+     "eff_merge_end": 9479,
+     "first_valid_sample": 684,
+     "last_valid_sample": 24293,
+     "merge_end": 9479,
+     "merge_start": 8137
+    },
+    {
+     "burst": 8,
+     "burst_end": 1426,
+     "burst_start": 84,
+     "eff_burst_end": 1425,
+     "eff_merge_end": 10820,
+     "first_valid_sample": 780,
+     "last_valid_sample": 24389,
+     "merge_end": 10821,
+     "merge_start": 9479
+    },
+    {
+     "burst": 9,
+     "burst_end": 1485,
+     "burst_start": 84,
+     "eff_burst_end": 1485,
+     "eff_merge_end": 12221,
+     "first_valid_sample": 780,
+     "last_valid_sample": 24389,
+     "merge_end": 12221,
+     "merge_start": 10820
+    }
+   ],
+   "samples_per_burst": 24845
+  },
+  "3": {
+   "lines_per_burst": 1509,
+   "num_az_lines": 12245,
+   "rows": [
+    {
+     "burst": 1,
+     "burst_end": 1427,
+     "burst_start": 27,
+     "eff_burst_end": 1426,
+     "eff_merge_end": 1426,
+     "first_valid_sample": 591,
+     "last_valid_sample": 23405,
+     "merge_end": 1427,
+     "merge_start": 27
+    },
+    {
+     "burst": 2,
+     "burst_end": 1427,
+     "burst_start": 83,
+     "eff_burst_end": 1427,
+     "eff_merge_end": 2770,
+     "first_valid_sample": 591,
+     "last_valid_sample": 23405,
+     "merge_end": 2770,
+     "merge_start": 1426
+    },
+    {
+     "burst": 3,
+     "burst_end": 1427,
+     "burst_start": 84,
+     "eff_burst_end": 1426,
+     "eff_merge_end": 4112,
+     "first_valid_sample": 591,
+     "last_valid_sample": 23405,
+     "merge_end": 4113,
+     "merge_start": 2770
+    },
+    {
+     "burst": 4,
+     "burst_end": 1425,
+     "burst_start": 85,
+     "eff_burst_end": 1425,
+     "eff_merge_end": 5452,
+     "first_valid_sample": 591,
+     "last_valid_sample": 23405,
+     "merge_end": 5452,
+     "merge_start": 4112
+    },
+    {
+     "burst": 5,
+     "burst_end": 1429,
+     "burst_start": 85,
+     "eff_burst_end": 1428,
+     "eff_merge_end": 6795,
+     "first_valid_sample": 591,
+     "last_valid_sample": 23404,
+     "merge_end": 6796,
+     "merge_start": 5452
+    },
+    {
+     "burst": 6,
+     "burst_end": 1426,
+     "burst_start": 82,
+     "eff_burst_end": 1425,
+     "eff_merge_end": 8138,
+     "first_valid_sample": 591,
+     "last_valid_sample": 23404,
+     "merge_end": 8139,
+     "merge_start": 6795
+    },
+    {
+     "burst": 7,
+     "burst_end": 1426,
+     "burst_start": 84,
+     "eff_burst_end": 1426,
+     "eff_merge_end": 9480,
+     "first_valid_sample": 591,
+     "last_valid_sample": 23405,
+     "merge_end": 9480,
+     "merge_start": 8138
+    },
+    {
+     "burst": 8,
+     "burst_end": 1426,
+     "burst_start": 85,
+     "eff_burst_end": 1426,
+     "eff_merge_end": 10821,
+     "first_valid_sample": 675,
+     "last_valid_sample": 23489,
+     "merge_end": 10821,
+     "merge_start": 9480
+    },
+    {
+     "burst": 9,
+     "burst_end": 1484,
+     "burst_start": 85,
+     "eff_burst_end": 1484,
+     "eff_merge_end": 12220,
+     "first_valid_sample": 675,
+     "last_valid_sample": 23489,
+     "merge_end": 12220,
+     "merge_start": 10821
+    }
+   ],
+   "samples_per_burst": 23894
+  }
+ },
+ "S1B_IW_SLC__1SSH_20200926T043523_20200926T043550_023541_02CB95_FD4C.zip": {
+  "1": {
+   "lines_per_burst": 1501,
+   "num_az_lines": 12234,
+   "rows": [
+    {
+     "burst": 1,
+     "burst_end": 1424,
+     "burst_start": 18,
+     "eff_burst_end": 1423,
+     "eff_merge_end": 1423,
+     "first_valid_sample": 154,
+     "last_valid_sample": 19760,
+     "merge_end": 1424,
+     "merge_start": 18
+    },
+    {
+     "burst": 2,
+     "burst_end": 1422,
+     "burst_start": 80,
+     "eff_burst_end": 1421,
+     "eff_merge_end": 2764,
+     "first_valid_sample": 107,
+     "last_valid_sample": 19713,
+     "merge_end": 2765,
+     "merge_start": 1423
+    },
+    {
+     "burst": 3,
+     "burst_end": 1422,
+     "burst_start": 79,
+     "eff_burst_end": 1422,
+     "eff_merge_end": 4107,
+     "first_valid_sample": 107,
+     "last_valid_sample": 19713,
+     "merge_end": 4107,
+     "merge_start": 2764
+    },
+    {
+     "burst": 4,
+     "burst_end": 1423,
+     "burst_start": 81,
+     "eff_burst_end": 1423,
+     "eff_merge_end": 5449,
+     "first_valid_sample": 107,
+     "last_valid_sample": 19713,
+     "merge_end": 5449,
+     "merge_start": 4107
+    },
+    {
+     "burst": 5,
+     "burst_end": 1421,
+     "burst_start": 82,
+     "eff_burst_end": 1421,
+     "eff_merge_end": 6788,
+     "first_valid_sample": 107,
+     "last_valid_sample": 19714,
+     "merge_end": 6788,
+     "merge_start": 5449
+    },
+    {
+     "burst": 6,
+     "burst_end": 1423,
+     "burst_start": 81,
+     "eff_burst_end": 1423,
+     "eff_merge_end": 8130,
+     "first_valid_sample": 107,
+     "last_valid_sample": 19714,
+     "merge_end": 8130,
+     "merge_start": 6788
+    },
+    {
+     "burst": 7,
+     "burst_end": 1424,
+     "burst_start": 79,
+     "eff_burst_end": 1424,
+     "eff_merge_end": 9475,
+     "first_valid_sample": 107,
+     "last_valid_sample": 19714,
+     "merge_end": 9475,
+     "merge_start": 8130
+    },
+    {
+     "burst": 8,
+     "burst_end": 1419,
+     "burst_start": 80,
+     "eff_burst_end": 1419,
+     "eff_merge_end": 10814,
+     "first_valid_sample": 107,
+     "last_valid_sample": 19713,
+     "merge_end": 10814,
+     "merge_start": 9475
+    },
+    {
+     "burst": 9,
+     "burst_end": 1484,
+     "burst_start": 81,
+     "eff_burst_end": 1484,
+     "eff_merge_end": 12217,
+     "first_valid_sample": 107,
+     "last_valid_sample": 19714,
+     "merge_end": 12217,
+     "merge_start": 10814
+    }
+   ],
+   "samples_per_burst": 19906
+  },
+  "2": {
+   "lines_per_burst": 1506,
+   "num_az_lines": 12238,
+   "rows": [
+    {
+     "burst": 1,
+     "burst_end": 1425,
+     "burst_start": 24,
+     "eff_burst_end": 1425,
+     "eff_merge_end": 1425,
+     "first_valid_sample": 135,
+     "last_valid_sample": 23575,
+     "merge_end": 1425,
+     "merge_start": 24
+    },
+    {
+     "burst": 2,
+     "burst_end": 1426,
+     "burst_start": 84,
+     "eff_burst_end": 1426,
+     "eff_merge_end": 2767,
+     "first_valid_sample": 135,
+     "last_valid_sample": 23575,
+     "merge_end": 2767,
+     "merge_start": 1425
+    },
+    {
+     "burst": 3,
+     "burst_end": 1424,
+     "burst_start": 82,
+     "eff_burst_end": 1424,
+     "eff_merge_end": 4109,
+     "first_valid_sample": 94,
+     "last_valid_sample": 23533,
+     "merge_end": 4109,
+     "merge_start": 2767
+    },
+    {
+     "burst": 4,
+     "burst_end": 1425,
+     "burst_start": 84,
+     "eff_burst_end": 1425,
+     "eff_merge_end": 5450,
+     "first_valid_sample": 94,
+     "last_valid_sample": 23533,
+     "merge_end": 5450,
+     "merge_start": 4109
+    },
+    {
+     "burst": 5,
+     "burst_end": 1425,
+     "burst_start": 84,
+     "eff_burst_end": 1424,
+     "eff_merge_end": 6790,
+     "first_valid_sample": 94,
+     "last_valid_sample": 23534,
+     "merge_end": 6791,
+     "merge_start": 5450
+    },
+    {
+     "burst": 6,
+     "burst_end": 1425,
+     "burst_start": 84,
+     "eff_burst_end": 1424,
+     "eff_merge_end": 8130,
+     "first_valid_sample": 94,
+     "last_valid_sample": 23534,
+     "merge_end": 8131,
+     "merge_start": 6790
+    },
+    {
+     "burst": 7,
+     "burst_end": 1426,
+     "burst_start": 83,
+     "eff_burst_end": 1426,
+     "eff_merge_end": 9473,
+     "first_valid_sample": 94,
+     "last_valid_sample": 23534,
+     "merge_end": 9473,
+     "merge_start": 8130
+    },
+    {
+     "burst": 8,
+     "burst_end": 1426,
+     "burst_start": 83,
+     "eff_burst_end": 1426,
+     "eff_merge_end": 10816,
+     "first_valid_sample": 94,
+     "last_valid_sample": 23534,
+     "merge_end": 10816,
+     "merge_start": 9473
+    },
+    {
+     "burst": 9,
+     "burst_end": 1486,
+     "burst_start": 84,
+     "eff_burst_end": 1486,
+     "eff_merge_end": 12218,
+     "first_valid_sample": 94,
+     "last_valid_sample": 23534,
+     "merge_end": 12218,
+     "merge_start": 10816
+    }
+   ],
+   "samples_per_burst": 23715
+  },
+  "3": {
+   "lines_per_burst": 1506,
+   "num_az_lines": 12240,
+   "rows": [
+    {
+     "burst": 1,
+     "burst_end": 1425,
+     "burst_start": 26,
+     "eff_burst_end": 1425,
+     "eff_merge_end": 1425,
+     "first_valid_sample": 115,
+     "last_valid_sample": 22766,
+     "merge_end": 1425,
+     "merge_start": 26
+    },
+    {
+     "burst": 2,
+     "burst_end": 1425,
+     "burst_start": 82,
+     "eff_burst_end": 1425,
+     "eff_merge_end": 2768,
+     "first_valid_sample": 115,
+     "last_valid_sample": 22766,
+     "merge_end": 2768,
+     "merge_start": 1425
+    },
+    {
+     "burst": 3,
+     "burst_end": 1424,
+     "burst_start": 83,
+     "eff_burst_end": 1424,
+     "eff_merge_end": 4109,
+     "first_valid_sample": 79,
+     "last_valid_sample": 22730,
+     "merge_end": 4109,
+     "merge_start": 2768
+    },
+    {
+     "burst": 4,
+     "burst_end": 1425,
+     "burst_start": 83,
+     "eff_burst_end": 1424,
+     "eff_merge_end": 5450,
+     "first_valid_sample": 79,
+     "last_valid_sample": 22730,
+     "merge_end": 5451,
+     "merge_start": 4109
+    },
+    {
+     "burst": 5,
+     "burst_end": 1426,
+     "burst_start": 83,
+     "eff_burst_end": 1426,
+     "eff_merge_end": 6793,
+     "first_valid_sample": 79,
+     "last_valid_sample": 22730,
+     "merge_end": 6793,
+     "merge_start": 5450
+    },
+    {
+     "burst": 6,
+     "burst_end": 1423,
+     "burst_start": 85,
+     "eff_burst_end": 1423,
+     "eff_merge_end": 8131,
+     "first_valid_sample": 79,
+     "last_valid_sample": 22730,
+     "merge_end": 8131,
+     "merge_start": 6793
+    },
+    {
+     "burst": 7,
+     "burst_end": 1426,
+     "burst_start": 84,
+     "eff_burst_end": 1425,
+     "eff_merge_end": 9472,
+     "first_valid_sample": 79,
+     "last_valid_sample": 22731,
+     "merge_end": 9473,
+     "merge_start": 8131
+    },
+    {
+     "burst": 8,
+     "burst_end": 1427,
+     "burst_start": 83,
+     "eff_burst_end": 1427,
+     "eff_merge_end": 10816,
+     "first_valid_sample": 79,
+     "last_valid_sample": 22730,
+     "merge_end": 10816,
+     "merge_start": 9472
+    },
+    {
+     "burst": 9,
+     "burst_end": 1482,
+     "burst_start": 82,
+     "eff_burst_end": 1482,
+     "eff_merge_end": 12216,
+     "first_valid_sample": 79,
+     "last_valid_sample": 22730,
+     "merge_end": 12216,
+     "merge_start": 10816
+    }
+   ],
+   "samples_per_burst": 22890
+  }
+ }
+}

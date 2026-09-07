@@ -19,7 +19,8 @@
 using SLCDatasets
 using SLCDatasets: LookRight, SPEED_OF_LIGHT, Sentinel1Backend, UtcTime, seconds_between,
            parse_utc, read_eof_state_vectors, safe_polarizations, default_polarization,
-           is_safe_product, annotation_xml, epoch_of, S1_ORBIT_PADDING
+           is_safe_product, annotation_xml, epoch_of, S1_ORBIT_PADDING,
+           read_annotation, valid_lines, valid_samples
 using Dates
 using StaticArrays: SVector
 using JSON3
@@ -60,11 +61,11 @@ function s1_products()
             eof = joinpath(S1_GRANULE_DIR, String(f.gold.orbit_file))
             # A granule named by the golden file but absent from the directory is a gap in coverage,
             # not a pass; `@test` on the paths below makes it visible.
-            push!(out, (; f.gold, safe, eof, f.name))
+            push!(out, (; f.gold, f.inputs, safe, eof, f.name))
         else
             dir = mkpath(joinpath(S1_FIXTURE_DIR, splitext(f.name)[1]))
             safe, eof = write_s1_fixture(dir, f.inputs)
-            push!(out, (; f.gold, safe, eof, f.name))
+            push!(out, (; f.gold, f.inputs, safe, eof, f.name))
         end
     end
     return out
@@ -405,4 +406,85 @@ if !isempty(S1_PRODUCTS)
         @test nbursts(prod, 2) == nbursts(p.safe; swath = 2, polarization = pol)
         @test_throws "was opened for subswaths IW1, IW2, not IW3" nbursts(prod, 3)
     end
+end
+
+# The valid region of each burst, against the reduction `s1reader`'s `burst_from_xml` performs. The
+# golden values are the four scalars per burst held in the inputs, which is what the granules' per-line
+# arrays reduce to; `read_valid_region` re-derives them from arrays the fixture writes back out, so
+# this asserts the reduction rather than the round trip.
+@testset "the valid region matches the s1reader reduction" begin
+    for p in S1_PRODUCTS
+        pol = String(p.gold.polarization)
+        for swath in 1:3
+            a = read_annotation(annotation_xml(p.safe, swath, pol), swath)
+            regions = p.inputs["swaths"][string(swath)]["burstValidRegions"]
+            @test length(regions) == nbursts(a)
+            for (i, region) in enumerate(regions)
+                # The inputs hold 1-based lines and the annotation's own 0-based samples.
+                @test a.first_valid_line[i] == Int(region["firstValidLine"])
+                @test a.last_valid_line[i] == Int(region["lastValidLine"])
+                @test a.first_valid_sample[i] == Int(region["firstValidSample"]) + 1
+                @test a.last_valid_sample[i] == Int(region["lastValidSample"]) + 1
+
+                # The region must be inside the burst's own extent, or a merge clipping to it would
+                # index outside the raster.
+                @test 1 <= a.first_valid_line[i] <= a.last_valid_line[i] <= a.lines_per_burst
+                @test 1 <= a.first_valid_sample[i] <= a.last_valid_sample[i] <= a.samples_per_burst
+
+                # Inclusive bounds, matching `s1reader`'s `inlength`/`inwidth`.
+                @test length(valid_lines(a, i)) ==
+                      a.last_valid_line[i] - a.first_valid_line[i] + 1
+                @test length(valid_samples(a, i)) ==
+                      a.last_valid_sample[i] - a.first_valid_sample[i] + 1
+            end
+        end
+    end
+end
+
+# Each of these is an annotation whose valid region is not the rectangle the reader reduces it to.
+# Reducing one anyway yields a rectangle covering lines or samples that carry nothing, which a merge
+# would then read as data.
+@testset "a valid region that is not a rectangle is refused" begin
+    lines = 6
+    samples = 100
+    burst(firsts, lasts) = """<product>
+      <adsHeader><missionId>S1A</missionId><productType>SLC</productType>
+        <polarisation>HH</polarisation><absoluteOrbitNumber>1</absoluteOrbitNumber></adsHeader>
+      <generalAnnotation><productInformation><pass>Descending</pass>
+        <rangeSamplingRate>6.4e7</rangeSamplingRate>
+        <radarFrequency>5.4e9</radarFrequency></productInformation></generalAnnotation>
+      <imageAnnotation><imageInformation><azimuthTimeInterval>0.002</azimuthTimeInterval>
+        <slantRangeTime>0.005</slantRangeTime></imageInformation></imageAnnotation>
+      <swathTiming><linesPerBurst>$lines</linesPerBurst>
+        <samplesPerBurst>$samples</samplesPerBurst>
+        <burstList count="1"><burst>
+          <azimuthTime>2020-01-01T00:00:00.000000</azimuthTime>
+          <firstValidSample>$firsts</firstValidSample>
+          <lastValidSample>$lasts</lastValidSample>
+        </burst></burstList></swathTiming>
+    </product>"""
+
+    valid = "-1 10 10 10 10 -1"
+    ends = "-1 90 90 90 90 -1"
+
+    # Nothing imaged at all.
+    @test_throws "no valid lines" read_annotation(burst("-1 -1 -1 -1 -1 -1", ends), 2)
+
+    # Valid lines in two runs: a gap in the middle is not a rectangle.
+    @test_throws "more than one run" read_annotation(burst("-1 10 -1 10 10 -1", ends), 2)
+
+    # One array shorter than the burst is tall.
+    @test_throws "one per line" read_annotation(burst("-1 10 10 10 10", ends), 2)
+    @test_throws "one of each" read_annotation(burst(valid, "-1 90 90 90 -1"), 2)
+
+    # An interior line narrower than the two the reduction reads: taking the rectangle from the
+    # boundary lines alone would claim samples this line does not carry.
+    @test_throws "varies its valid sample range" read_annotation(
+        burst(valid, "-1 90 50 90 90 -1"), 2)
+    @test_throws "varies its valid sample range" read_annotation(
+        burst("-1 10 40 10 10 -1", ends), 2)
+
+    # A burst whose first and last valid lines share no sample.
+    @test_throws "no sample valid on both" read_annotation(
+        burst("-1 10 95 95 95 -1", "-1 20 99 99 99 -1"), 2)
 end

@@ -16,9 +16,29 @@ const S1_GOLDEN = ["sentinel1_metadata.json", "sentinel1_metadata_s1b.json"]
 # The annotation elements `read_annotation` looks for, in the paths it looks for them. Fields a real
 # annotation carries but this reader ignores are omitted rather than filled with stand-ins, so what the
 # reader depends on is visible here.
+# The per-line `firstValidSample`/`lastValidSample` arrays of one burst, written back out from the
+# rectangle the inputs record: the burst's invalid lines carry -1, its valid lines the sample bounds.
+function s1_valid_sample_arrays(region::AbstractDict, lines_per_burst::Integer)
+    lo = Int(region["firstValidLine"])
+    hi = Int(region["lastValidLine"])
+    first_sample = Int(region["firstValidSample"])
+    last_sample = Int(region["lastValidSample"])
+    valid(i) = lo <= i <= hi
+    firsts = join((valid(i) ? first_sample : -1 for i in 1:lines_per_burst), " ")
+    lasts = join((valid(i) ? last_sample : -1 for i in 1:lines_per_burst), " ")
+    return firsts, lasts
+end
+
 function s1_annotation_document(sw::AbstractDict)
-    bursts = join(("<burst><azimuthTime>$t</azimuthTime></burst>"
-                   for t in sw["burstAzimuthTimes"]))
+    lines_per_burst = parse(Int, String(sw["linesPerBurst"]))
+    regions = sw["burstValidRegions"]
+    bursts = join(begin
+                      firsts, lasts = s1_valid_sample_arrays(regions[i], lines_per_burst)
+                      "<burst><azimuthTime>$t</azimuthTime>" *
+                      "<firstValidSample>$firsts</firstValidSample>" *
+                      "<lastValidSample>$lasts</lastValidSample></burst>"
+                  end
+                  for (i, t) in enumerate(sw["burstAzimuthTimes"]))
     return """<?xml version="1.0" encoding="UTF-8"?>
     <product>
       <adsHeader>
