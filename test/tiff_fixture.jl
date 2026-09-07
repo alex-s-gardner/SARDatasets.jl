@@ -31,7 +31,8 @@ function write_tiff(path::AbstractString, pixels::AbstractMatrix{Complex{Int16}}
                     sample_format::Integer = 5, planar::Union{Nothing,Integer} = 1,
                     magic::Integer = 42, bigendian::Bool = false,
                     tiled::Bool = false, nstrips::Union{Nothing,Integer} = nothing,
-                    strip_bytes::Union{Nothing,Integer} = nothing)
+                    strip_bytes::Union{Nothing,Integer} = nothing,
+                    pad::Integer = 0)
     nlines, nsamples = size(pixels)
     conv = bigendian ? bswap : identity
 
@@ -46,7 +47,9 @@ function write_tiff(path::AbstractString, pixels::AbstractMatrix{Complex{Int16}}
     table_count = nstrips === nothing ? nlines : Int(nstrips)
     offsets_at = header + dirsize
     counts_at = offsets_at + 4 * table_count
-    raster_at = counts_at + 4 * table_count
+    # `pad` shifts the raster off a multiple of the sample size, which is where a real writer leaves it.
+    # A reader loading a sample as a word rather than assembling its bytes fails only on such a file.
+    raster_at = counts_at + 4 * table_count + Int(pad)
 
     linebytes = strip_bytes === nothing ? 4 * nsamples : Int(strip_bytes)
     offsets = UInt32[raster_at + (i - 1) * 4 * nsamples for i in 1:table_count]
@@ -93,6 +96,7 @@ function write_tiff(path::AbstractString, pixels::AbstractMatrix{Complex{Int16}}
 
         for v in offsets; write(io, conv(v)); end
         for v in counts;  write(io, conv(v)); end
+        pad > 0 && write(io, zeros(UInt8, Int(pad)))
 
         # Row-major on disk: line 1's samples, then line 2's.
         for i in 1:nlines, j in 1:nsamples

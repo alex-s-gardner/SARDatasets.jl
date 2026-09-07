@@ -18,6 +18,20 @@ using SLCDatasets: open_tiff, StripedTiff
     end
 end
 
+# A real writer puts the raster wherever the tags happen to land, which is not a multiple of the sample
+# size. A reader loading a sample as a 32-bit word rather than assembling its bytes fails only here.
+@testset "reads a raster at an unaligned offset" begin
+    mktempdir() do dir
+        pixels = tiff_pattern(5, 9)
+        for pad in 1:3
+            t = open_tiff(write_tiff(joinpath(dir, "pad$pad.tiff"), pixels; pad))
+            @test t == pixels
+            @test t[2:4, 3:8] == pixels[2:4, 3:8]
+            @test t[3, 5] == pixels[3, 5]
+        end
+    end
+end
+
 @testset "reads a big-endian raster" begin
     mktempdir() do dir
         pixels = tiff_pattern(6, 7)

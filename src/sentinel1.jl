@@ -735,3 +735,38 @@ function _eof_kind(path::AbstractString)
     occursin("RESORB", name) && return "RESORB"
     return "Custom"
 end
+
+# Reaching a subswath's measurement raster.
+#
+# The raster sits beside the annotation under the same stem: `annotation/s1a-iw2-slc-hh-….xml` names
+# `measurement/s1a-iw2-slc-hh-….tiff`. Only a `.SAFE` directory can be indexed, because a zip stores the
+# raster deflated — reaching a line means inflating everything before it, and the strip table it would
+# need first is at the end of the entry. Metadata reads from a zip are unaffected, so the refusal
+# happens here rather than at `open_slc`.
+
+"""
+    measurement_path(product::Sentinel1Product, swath) -> String
+
+The measurement raster of one subswath.
+
+Throws for a zipped product, naming what to do instead: the raster is deflated inside the archive, so
+its lines are not addressable without inflating the whole entry.
+"""
+function measurement_path(p::Sentinel1Product, swath::Integer)
+    isdir(p.path) || throw(ArgumentError(
+        "`$(p.path)` is a zipped Sentinel-1 product, whose measurement raster is deflated inside " *
+        "the archive and so cannot be read a window at a time. Unpack it and open the `.SAFE` " *
+        "directory, or read the bursts from ASF's burst extractor. Reading the metadata of a zipped " *
+        "product needs no unpacking and is unaffected"))
+
+    dir = joinpath(p.path, "measurement")
+    isdir(dir) || throw(ArgumentError(
+        "`$(p.path)` has no `measurement` directory, so it carries annotation only"))
+
+    id_str = _swath_id(swath, p.polarization)
+    hits = filter(n -> occursin(id_str, n) && endswith(n, ".tiff"), readdir(dir))
+    isempty(hits) && throw(ArgumentError(
+        "`$(p.path)` has no measurement raster for subswath IW$swath polarization " *
+        "$(uppercase(p.polarization))"))
+    return joinpath(dir, only(sort!(hits)))
+end

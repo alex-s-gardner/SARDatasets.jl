@@ -40,6 +40,7 @@ using ZipArchives: ZipReader, zip_name, zip_nentries, zip_readentry
 
 export open_slc, bursts, orbit, nlines, nsamples, start_datetime, stop_datetime
 export repeat_interval, epoch_offset, nbursts
+export merge_bursts, pixels, amplitude, validmask
 export SLC, SLCSeries, Identification, RadarGeometry, StateVectors
 export Sentinel1Product
 export LocalFile, RemoteHTTP, RemoteS3
@@ -54,6 +55,9 @@ include("tiff.jl")
 include("nisar.jl")
 include("sentinel1.jl")
 include("burstgrid.jl")
+include("concatenated.jl")
+include("pixels.jl")
+include("merge.jl")
 # `remote.jl` before `source.jl`: the remote sources are what `open_slc` dispatches on.
 include("remote.jl")
 include("source.jl")

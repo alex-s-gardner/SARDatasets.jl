@@ -200,10 +200,21 @@ function _tiff_inbounds(path, data, offset, len, what)
     return nothing
 end
 
-# `offset` is a 1-based byte index into `data`.
+# `offset` is a 1-based byte index into `data`. The bytes are assembled rather than loaded as a `T`:
+# nothing in a TIFF is required to sit at a multiple of its own width, and a real measurement raster puts
+# its strips at offsets that are not.
 function _tiff_load(::Type{T}, data, offset, swapped) where {T}
-    x = GC.@preserve data unsafe_load(Ptr{T}(pointer(data, offset)))::T
-    return swapped ? bswap(x) : x
+    x = zero(T)
+    if swapped
+        for k in 0:(sizeof(T) - 1)
+            x = (x << 8) | T(data[offset + k])
+        end
+    else
+        for k in (sizeof(T) - 1):-1:0
+            x = (x << 8) | T(data[offset + k])
+        end
+    end
+    return x
 end
 
 @noinline _tiff_no_tag(path, tag) = throw(ArgumentError(
@@ -297,18 +308,22 @@ function _copy_window!(out, t::StripedTiff{T}, rows, cols) where {T}
     first_col = Int(first(cols))
     data = t.data
     swapped = t.swapped
-    GC.@preserve data begin
-        for (di, i) in enumerate(rows)
-            off = _sample_offset(t, Int(i), first_col)
-            line = unsafe_wrap(Array, Ptr{T}(pointer(data, off)), ncols)
-            if swapped
-                for j in 1:ncols
-                    v = line[j]
-                    out[di, j] = T(bswap(real(v)), bswap(imag(v)))
-                end
-            else
-                copyto!(view(out, di, :), line)
+
+    # The line's bytes are copied into a buffer and read from there rather than being read in place: a
+    # strip begins wherever the writer put it, which in a real product is not a multiple of the sample
+    # size, and a sample straddling that boundary cannot be loaded from the mapping directly.
+    bytes = Vector{UInt8}(undef, 4 * ncols)
+    samples = reinterpret(T, bytes)
+    for (di, i) in enumerate(rows)
+        off = _sample_offset(t, Int(i), first_col)
+        copyto!(bytes, 1, data, off, 4 * ncols)
+        if swapped
+            for j in 1:ncols
+                v = samples[j]
+                out[di, j] = T(bswap(real(v)), bswap(imag(v)))
             end
+        else
+            copyto!(view(out, di, :), samples)
         end
     end
     return out
