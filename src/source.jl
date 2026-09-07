@@ -53,14 +53,36 @@ function open_slc(src::AbstractSLCSource; frequency = nothing, orbit = nothing,
     ishdf5(path) || throw(ArgumentError(
         "`$path` is neither an HDF5 file nor a Sentinel-1 SAFE product; those are the only " *
         "formats currently read"))
-    band = nisar_band(path)
-    product_type = nisar_product_type(path, band)
-    freq = frequency === nothing ? default_frequency(path, band) : String(frequency)
-    backend = NisarBackend(path, band, product_type, freq)
-    return SLC(backend, read_identification(backend), read_geometry(backend))
+    # One handle serves the band probe, the type dispatch, the frequency default and both metadata
+    # reads; each `h5open` costs about as much as a read, so reopening five times would dominate.
+    return h5open(path, "r") do h
+        band = nisar_band(h)
+        product_type = nisar_product_type(h, band)
+        freq = frequency === nothing ? default_frequency(h, band) : String(frequency)
+        backend = NisarBackend(path, band, product_type, freq)
+        return SLC(backend, read_identification(backend, h), read_geometry(backend, h))
+    end
 end
 
 function _open_sentinel1(path::AbstractString; orbit, swath, swaths, burst, polarization)
+    # A single burst belongs to one subswath, so naming a burst without a subswath would silently pick
+    # one; requiring `swath` alongside `burst` keeps the choice the caller's. Checked before the product
+    # is parsed, since it is a fault in the call rather than in the product.
+    if burst !== nothing
+        swath === nothing && swaths === nothing && throw(ArgumentError(
+            "`burst` selects a burst of one subswath, so it needs `swath = 1`, `2` or `3` as well"))
+        named = swath !== nothing ? 1 : count(_ -> true, swaths)
+        named == 1 || throw(ArgumentError(
+            "a burst belongs to one subswath, but $named were named"))
+    end
+    p = _sentinel1_product(path; orbit, swath, swaths, polarization)
+    backend = burst === nothing ? Sentinel1Backend(p) :
+              Sentinel1Backend(p, only(p.swaths), Int(burst))
+    return SLC(backend)
+end
+
+# The validation `open_slc` and `bursts` share, and the one parse of the container they both build on.
+function _sentinel1_product(path::AbstractString; orbit, swath, swaths, polarization)
     orbit === nothing && throw(ArgumentError(
         "`$path` is a Sentinel-1 product, whose state vectors live in a separate POEORB/RESORB " *
         "`.EOF` file rather than in the product. Pass `orbit = \"<file>.EOF\"`"))
@@ -69,30 +91,53 @@ function _open_sentinel1(path::AbstractString; orbit, swath, swaths, burst, pola
 
     swath !== nothing && swaths !== nothing && throw(ArgumentError(
         "pass either `swath` for one subswath or `swaths` for several, not both"))
-    # A single burst belongs to one subswath, so naming a burst without a subswath would silently
-    # pick one; requiring `swath` alongside `burst` keeps the choice the caller's.
-    burst !== nothing && swath === nothing && swaths === nothing && throw(ArgumentError(
-        "`burst` selects a burst of one subswath, so it needs `swath = 1`, `2` or `3` as well"))
 
+    # `Sentinel1Product` sorts, so the order here is the caller's and only the membership is checked.
     selected = swath !== nothing ? [Int(swath)] :
-               swaths !== nothing ? sort(collect(Int, swaths)) : [1, 2, 3]
+               swaths !== nothing ? collect(Int, swaths) : collect(S1_SUBSWATHS)
     isempty(selected) && throw(ArgumentError("`swaths` is empty; name at least one subswath"))
-    all(s -> 1 <= s <= 3, selected) || throw(ArgumentError(
+    all(in(S1_SUBSWATHS), selected) || throw(ArgumentError(
         "Sentinel-1 IW subswaths are 1, 2 and 3; got $(join(selected, ", "))"))
     allunique(selected) || throw(ArgumentError(
         "`swaths` repeats a subswath: $(join(selected, ", "))"))
-    burst !== nothing && length(selected) == 1 || burst === nothing || throw(ArgumentError(
-        "a burst belongs to one subswath, but $(length(selected)) were named"))
 
-    pol = polarization === nothing ? default_polarization(path) : lowercase(String(polarization))
-    available = safe_polarizations(path)
-    pol in available || throw(ArgumentError(
-        "`$path` carries polarization$(length(available) == 1 ? " " : "s ")" *
-        "$(join(uppercase.(available), ", ")), not $(uppercase(pol))"))
+    # The polarization is checked against what the product carries inside the constructor, which has the
+    # container's listing already open.
+    return Sentinel1Product(path; orbit = orbit_path, polarization, swaths = selected)
+end
 
-    backend = Sentinel1Backend(path, orbit_path, pol, selected,
-                               burst === nothing ? nothing : Int(burst))
-    return SLC(backend, read_identification(backend), read_geometry(backend))
+"""
+    bursts(src; orbit, swath = 1, polarization = nothing) -> SLCSeries
+    bursts(p::Sentinel1Product, swath = first(p.swaths)) -> SLCSeries
+
+Every burst of one Sentinel-1 subswath, as a vector of [`SLC`](@ref)s.
+
+The subswath's annotation is parsed once and shared, so indexing the result costs no further reading of
+the product — unlike calling [`open_slc`](@ref) once per burst, which re-reads it each time.
+
+# Examples
+
+```julia
+b = bursts("S1A_IW_SLC_....zip"; orbit = "...EOF", swath = 2)
+length(b)
+b[1].geometry.sensing_start
+[nlines(s) for s in b]
+```
+"""
+function bursts(src::AbstractSLCSource; orbit = nothing, swath::Integer = 1, polarization = nothing)
+    path = localpath(src)
+    is_safe_product(path) || throw(ArgumentError(
+        "`$path` is not a Sentinel-1 SAFE product; bursts are a Sentinel-1 TOPS concept"))
+    p = _sentinel1_product(path; orbit, swath, swaths = nothing, polarization)
+    return bursts(p, swath)
+end
+
+bursts(path::AbstractString; kwargs...) = bursts(source_for(path); kwargs...)
+
+function bursts(p::Sentinel1Product, swath::Integer = first(p.swaths))
+    n = nbursts(p, swath)
+    s = Int(swath)
+    return SLCSeries(i -> SLC(Sentinel1Backend(p, s, i)), n, SLC{Sentinel1Backend})
 end
 
 # A partly fetched product fails inside HDF5, reading zeros out of the hole past the prefetch window.
@@ -122,16 +167,17 @@ function source_for(spec::AbstractString)
 end
 
 """
-    default_frequency(path, band) -> String
+    default_frequency(h, band) -> String
 
 The first sub-band a NISAR product lists, as the one to read when the caller names none.
 """
-function default_frequency(path::AbstractString, band::AbstractString)
-    return h5open(path, "r") do h
-        name = string(SCIENCE_ROOT, "/", band, "/identification/listOfFrequencies")
-        haskey(h, name) || return "A"
-        listed = read(h[name])
-        isempty(listed) && throw(ArgumentError("`$path` lists no frequencies"))
-        return _string(first(listed))
-    end
+function default_frequency(h, band::AbstractString)::String
+    name = string(SCIENCE_ROOT, "/", band, "/identification/listOfFrequencies")
+    haskey(h, name) || return "A"
+    listed = read(_dataset(h, name))
+    isempty(listed) && throw(ArgumentError("`$(HDF5.filename(h))` lists no frequencies"))
+    return _string(first(listed))
 end
+
+default_frequency(path::AbstractString, band::AbstractString) =
+    h5open(h -> default_frequency(h, band), path, "r")

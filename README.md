@@ -71,6 +71,7 @@ all 26 geometry and identification values agree bitwise, and the scene-center ra
 position and velocity agree to 0 ULP. For Sentinel-1, against `isce3` + `s1reader` on two granules from
 different missions — every range, spacing, wavelength, PRF and image dimension of the mosaic and of all
 27 bursts agrees bitwise, state vectors agree bitwise, and azimuth times agree to a nanosecond.
+
 `test/reference/dump_sentinel1.py` regenerates the golden values.
 
 ## Sentinel-1
@@ -92,6 +93,24 @@ A TOPS product is three subswaths of bursts at different slant ranges rather tha
 are two defensible geometries and both are available: the mosaic spanning the subswaths, and a single
 burst. Only the annotation XML is read, so the measurement TIFFs cost nothing and a zip need not be
 unpacked.
+
+To work through a subswath's bursts, `bursts` parses the annotation once and returns them as an
+`AbstractVector` of `SLC`s, where a call to `open_slc` per burst would re-read the product each time.
+
+```julia
+b = bursts(safe; orbit = eof, swath = 2)   # an AbstractVector{SLC}, one parse
+length(b)                                  # 9
+b[3].geometry.starting_range               # built on indexing
+[nlines(s) for s in b]
+```
+
+A `Sentinel1Product` is the parsed product itself, when several subswaths are wanted from one read:
+
+```julia
+p = Sentinel1Product(safe; orbit = eof)    # subswaths 1-3, parsed once
+nbursts(p, 2)
+bursts(p, 3)
+```
 
 Times are reported against an `epoch` two days before the anchor burst's sensing start, matching the
 offset `s1reader` and ISCE3's Doppler LUTs use; `epoch + sensing_start` is the instant the product
