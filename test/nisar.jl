@@ -118,7 +118,7 @@ end
     mktempdir() do dir
         plain = joinpath(dir, "plain.txt")
         write(plain, "not hdf5")
-        @test_throws "is not an HDF5 file" open_slc(plain)
+        @test_throws "neither an HDF5 file nor a Sentinel-1 SAFE product" open_slc(plain)
 
         empty = joinpath(dir, "empty.h5")
         h5open(empty, "w") do h

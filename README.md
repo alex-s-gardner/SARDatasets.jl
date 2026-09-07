@@ -66,15 +66,40 @@ What does live here is what a pair of *products* means: `repeat_interval` spans 
 `epoch_offset` gives the seconds between a product's epoch and midnight — the constant a kernel indexing
 azimuth lines against midnight needs.
 
-Verified against `h5py` and `isce3` on a real granule: all 26 geometry and identification values agree
-bitwise, and the scene-center range, azimuth time, position and velocity agree to 0 ULP.
+Verified against the reference implementations on real granules. For NISAR, against `h5py` and `isce3`:
+all 26 geometry and identification values agree bitwise, and the scene-center range, azimuth time,
+position and velocity agree to 0 ULP. For Sentinel-1, against `isce3` + `s1reader` on two granules from
+different missions — every range, spacing, wavelength, PRF and image dimension of the mosaic and of all
+27 bursts agrees bitwise, state vectors agree bitwise, and azimuth times agree to a nanosecond.
+`test/reference/dump_sentinel1.py` regenerates the golden values.
+
+## Sentinel-1
+
+An IW SLC is read from a `.SAFE` directory or the zip of one. The state vectors come from a POEORB or
+RESORB `.EOF` file, which the product does not contain, so `orbit` is required — an acquisition whose
+orbit is unavailable is refused rather than returned half-read.
+
+```julia
+safe = "S1A_IW_SLC__1SSH_20151120T080202_....zip"
+eof  = "S1A_OPER_AUX_POEORB_OPOD_....EOF"
+
+mosaic = open_slc(safe; orbit = eof)                       # across subswaths 1-3
+burst  = open_slc(safe; orbit = eof, swath = 2, burst = 3)  # one burst
+nbursts(safe; swath = 2)                                    # 9
+```
+
+A TOPS product is three subswaths of bursts at different slant ranges rather than one image, so there
+are two defensible geometries and both are available: the mosaic spanning the subswaths, and a single
+burst. Only the annotation XML is read, so the measurement TIFFs cost nothing and a zip need not be
+unpacked.
+
+Times are reported against an `epoch` two days before the anchor burst's sensing start, matching the
+offset `s1reader` and ISCE3's Doppler LUTs use; `epoch + sensing_start` is the instant the product
+records.
 
 ## Scope
 
-SLCs in radar geometry. NISAR-format HDF5 (RSLC) is read; Sentinel-1 is not yet, because its geometry
-lives in IPF-versioned annotation XML inside a zip plus a separate orbit file — a different data model
-rather than more of the same one. The backend seam it would plug into is in place; see
-`PLAN-slc-reader.md`.
+SLCs in radar geometry: NISAR-format HDF5 (RSLC) and Sentinel-1 IW SLC.
 
 Other SAR products are out of scope rather than unimplemented. An interferogram (RIFG, RUNW) or a
 covariance product (GCOV) carries a multilooked grid, and a geocoded SLC (GSLC) carries map coordinates
