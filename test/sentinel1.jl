@@ -6,20 +6,24 @@
 # epoch is truncated to the second where the reference's keeps microseconds, and only the instant they
 # denote is a claim about the product.
 #
-# The products are multi-gigabyte granules that are not in the repository. `reference/*.json` names the
-# granule each was dumped from; the tests run when a directory holding them is given by
-# `SLCDATASETS_S1_DIR` and are skipped otherwise, so a missing granule is reported rather than silently
-# passing.
+# The granules themselves are multi-gigabyte and not in the repository, so the products these run
+# against are rebuilt from `reference/sentinel1_inputs*.json`, which carries the annotation fields and
+# state vectors of each granule verbatim — the text as the annotation writes it, so the reader parses
+# what it would have parsed from the granule. The comparison against ISCE3 is therefore hardcoded and
+# runs anywhere.
+#
+# Setting `SLCDATASETS_S1_DIR` to a directory holding the granules named in the golden files reads those
+# instead. Both modes assert the same values, which is what keeps the rebuilt products honest: if a
+# reader change made them diverge, the granule run would fail where the fixture run passed.
 
 using SLCDatasets
 using SLCDatasets: LookRight, SPEED_OF_LIGHT, Sentinel1Backend, UtcTime, seconds_between,
            parse_utc, read_eof_state_vectors, safe_polarizations, default_polarization,
            is_safe_product, annotation_xml, epoch_of, S1_ORBIT_PADDING
 using Dates
+using StaticArrays: SVector
 using JSON3
 using Test
-
-const S1_GOLDEN = ["sentinel1_metadata.json", "sentinel1_metadata_s1b.json"]
 
 norm3(v) = sqrt(v[1]^2 + v[2]^2 + v[3]^2)
 
@@ -40,19 +44,28 @@ utc(stamp) = Instant(parse_utc(stamp), 0.0)
 seconds_apart(a::Instant, b::Instant) =
     seconds_between(b.epoch, a.epoch) + (a.offset - b.offset)
 
+# The products the golden values are checked against. By default each is rebuilt from the committed
+# inputs, which carry the annotation fields and state vectors of the granule verbatim. Setting
+# `SLCDATASETS_S1_DIR` to a directory holding the granules themselves reads those instead, which is what
+# confirms the rebuilt products still stand for them.
+const S1_GRANULE_DIR = get(ENV, "SLCDATASETS_S1_DIR", "")
+const S1_FROM_GRANULES = !isempty(S1_GRANULE_DIR)
+const S1_FIXTURE_DIR = mktempdir(; cleanup = true)
+
 function s1_products()
-    dir = get(ENV, "SLCDATASETS_S1_DIR", "")
-    isempty(dir) && return NamedTuple[]
     out = NamedTuple[]
-    for name in S1_GOLDEN
-        file = joinpath(@__DIR__, "reference", name)
-        isfile(file) || continue
-        gold = JSON3.read(read(file, String))
-        safe = joinpath(dir, gold.safe)
-        eof = joinpath(dir, gold.orbit_file)
-        # A granule named by the golden file but absent from the directory is a gap in coverage, not a
-        # pass; `@test` on the paths below makes it visible.
-        push!(out, (; gold, safe, eof, name))
+    for f in s1_fixtures()
+        if S1_FROM_GRANULES
+            safe = joinpath(S1_GRANULE_DIR, String(f.gold.safe))
+            eof = joinpath(S1_GRANULE_DIR, String(f.gold.orbit_file))
+            # A granule named by the golden file but absent from the directory is a gap in coverage,
+            # not a pass; `@test` on the paths below makes it visible.
+            push!(out, (; f.gold, safe, eof, f.name))
+        else
+            dir = mkpath(joinpath(S1_FIXTURE_DIR, splitext(f.name)[1]))
+            safe, eof = write_s1_fixture(dir, f.inputs)
+            push!(out, (; f.gold, safe, eof, f.name))
+        end
     end
     return out
 end
@@ -60,16 +73,20 @@ end
 const S1_PRODUCTS = s1_products()
 
 if isempty(S1_PRODUCTS)
-    @info """no Sentinel-1 products available, so the Sentinel-1 golden-value tests are skipped.
-             Set SLCDATASETS_S1_DIR to a directory holding the granules and orbit files named in
-             test/reference/sentinel1_metadata*.json to run them."""
+    @info "no Sentinel-1 golden-value files found, so those tests are skipped."
 else
+    S1_FROM_GRANULES ||
+        @info """Sentinel-1 golden values checked against products rebuilt from
+                 test/reference/sentinel1_inputs*.json. Set SLCDATASETS_S1_DIR to a directory holding
+                 the granules named in the golden files to check against those instead."""
     for p in S1_PRODUCTS
         gold = p.gold
         @testset "$(gold.safe)" begin
-            @test isfile(p.safe)
+            # A granule named by a golden file but absent from `SLCDATASETS_S1_DIR` is a gap in
+            # coverage rather than a pass, so the paths are asserted before anything reads them.
+            @test ispath(p.safe)
             @test isfile(p.eof)
-            (isfile(p.safe) && isfile(p.eof)) || continue
+            (ispath(p.safe) && isfile(p.eof)) || continue
 
             @test is_safe_product(p.safe)
             pol = String(gold.polarization)
@@ -267,32 +284,33 @@ end
     @test seconds_between(a, a) === 0.0
 end
 
-@testset "a Sentinel-1 product needs an orbit file" begin
-    dir = get(ENV, "SLCDATASETS_S1_DIR", "")
-    if !isempty(dir) && !isempty(S1_PRODUCTS) && isfile(first(S1_PRODUCTS).safe)
-        safe = first(S1_PRODUCTS).safe
+if !isempty(S1_PRODUCTS)
+    @testset "a Sentinel-1 product needs an orbit file" begin
+        p = first(S1_PRODUCTS)
         # Silently returning an SLC whose state vectors are unavailable would defer the failure to
         # whatever consumes the orbit, so opening one is refused outright.
-        @test_throws "state vectors live in a separate" open_slc(safe)
-        @test_throws "is not a readable orbit file" open_slc(safe; orbit = "no_such.EOF")
-        @test_throws "not both" open_slc(safe; orbit = first(S1_PRODUCTS).eof,
-                                         swath = 1, swaths = [1, 2])
-        @test_throws "it needs `swath = 1`" open_slc(safe; orbit = first(S1_PRODUCTS).eof, burst = 1)
-        @test_throws "subswaths are 1, 2 and 3" open_slc(safe; orbit = first(S1_PRODUCTS).eof,
-                                                          swath = 4)
-        @test_throws "does not exist" open_slc(safe; orbit = first(S1_PRODUCTS).eof,
-                                                swath = 1, burst = 9999)
-        @test_throws "not VV" open_slc(safe; orbit = first(S1_PRODUCTS).eof, polarization = "vv")
+        @test_throws "state vectors live in a separate" open_slc(p.safe)
+        @test_throws "is not a readable orbit file" open_slc(p.safe; orbit = "no_such.EOF")
+        @test_throws "not both" open_slc(p.safe; orbit = p.eof, swath = 1, swaths = [1, 2])
+        @test_throws "it needs `swath = 1`" open_slc(p.safe; orbit = p.eof, burst = 1)
+        @test_throws "but 2 were named" open_slc(p.safe; orbit = p.eof, swaths = [1, 2], burst = 1)
+        @test_throws "subswaths are 1, 2 and 3" open_slc(p.safe; orbit = p.eof, swath = 4)
+        @test_throws "does not exist" open_slc(p.safe; orbit = p.eof, swath = 1, burst = 9999)
+        @test_throws "repeats a subswath" open_slc(p.safe; orbit = p.eof, swaths = [1, 1])
+        @test_throws "name at least one subswath" open_slc(p.safe; orbit = p.eof, swaths = Int[])
+        wrong = String(first(S1_PRODUCTS).gold.polarization) == "hh" ? "vv" : "hh"
+        @test_throws "not $(uppercase(wrong))" open_slc(p.safe; orbit = p.eof,
+                                                        polarization = wrong)
     end
-end
 
-@testset "an orbit file from the wrong granule is rejected" begin
-    ps = S1_PRODUCTS
-    if length(ps) >= 2 && all(q -> isfile(q.safe) && isfile(q.eof), ps)
-        # The two products are years apart, so neither orbit file covers the other's window. Reading
-        # zero state vectors and reporting an empty orbit would be the silent failure here.
-        @test_throws "different granule" orbit(open_slc(ps[1].safe; orbit = ps[2].eof,
-                                                        polarization = String(ps[1].gold.polarization)))
+    @testset "an orbit file from the wrong granule is rejected" begin
+        ps = S1_PRODUCTS
+        if length(ps) >= 2
+            # The two products are years apart, so neither orbit file covers the other's window.
+            # Reading zero state vectors and reporting an empty orbit would be the silent failure.
+            @test_throws "different granule" orbit(open_slc(ps[1].safe; orbit = ps[2].eof,
+                                                           polarization = String(ps[1].gold.polarization)))
+        end
     end
 end
 
@@ -311,5 +329,80 @@ end
         @test !is_safe_product(plain)
         @test !is_safe_product(dir)
         @test_throws "neither an HDF5 file nor a Sentinel-1 SAFE product" open_slc(plain)
+        @test_throws "not a Sentinel-1 SAFE product" bursts(plain; orbit = plain)
+    end
+end
+
+# The orbit window is half-open at its leading edge: a vector exactly `S1_ORBIT_PADDING` before the
+# burst start is excluded. `s1reader` draws the boundary there, so admitting it would hand an
+# interpolator one more vector than ISCE3 sees — a difference no golden-value field would reveal, since
+# every kept vector's own values are unchanged.
+@testset "the orbit padding window is half-open at its leading edge" begin
+    start = parse_utc("2019-01-01T12:00:00.000000")
+    stop = parse_utc("2019-01-01T12:00:03.000000")
+    mktempdir() do dir
+        path = joinpath(dir, "edge.EOF")
+        # One vector exactly at `-padding`, one just inside it, and one exactly at `+padding`.
+        stamps = ["2019-01-01T11:59:00.000000",   # start - 60 s exactly: excluded
+                  "2019-01-01T11:59:00.500000",   # inside: kept
+                  "2019-01-01T12:00:01.000000",   # inside: kept
+                  "2019-01-01T12:01:03.000000"]   # stop + 60 s exactly: kept
+        osvs = join(("<OSV><UTC>UTC=$s</UTC><X>1.0</X><Y>2.0</Y><Z>3.0</Z>" *
+                     "<VX>4.0</VX><VY>5.0</VY><VZ>6.0</VZ></OSV>" for s in stamps))
+        write(path, "<Earth_Explorer_File><Data_Block><List_of_OSVs count=\"4\">" *
+                    osvs * "</List_of_OSVs></Data_Block></Earth_Explorer_File>")
+        table = read_eof_state_vectors(path; from = start, to = stop,
+                                       padding = S1_ORBIT_PADDING)
+        @test length(table) == 3
+        @test table.time[1] == parse_utc("2019-01-01T11:59:00.500000")
+        # Unfiltered, every record is kept.
+        @test length(read_eof_state_vectors(path)) == 4
+    end
+end
+
+@testset "an OSV record missing a field throws rather than reading a zero vector" begin
+    mktempdir() do dir
+        path = joinpath(dir, "short.EOF")
+        write(path, "<Earth_Explorer_File><Data_Block><List_of_OSVs count=\"1\">" *
+                    "<OSV><UTC>UTC=2019-01-01T12:00:00.000000</UTC>" *
+                    "<X>1.0</X><Y>2.0</Y><Z>3.0</Z></OSV>" *
+                    "</List_of_OSVs></Data_Block></Earth_Explorer_File>")
+        @test_throws "missing one of its X/Y/Z/VX/VY/VZ fields" read_eof_state_vectors(path)
+    end
+end
+
+@testset "state vector records must be index-matched" begin
+    @test_throws DimensionMismatch SLCDatasets.StateVectorTable(
+        [parse_utc("2019-01-01T12:00:00")], SVector{3,Float64}[], SVector{3,Float64}[])
+    @test_throws "index-matched" StateVectors(
+        [0.0, 1.0], [SVector(1.0, 2.0, 3.0)], [SVector(1.0, 2.0, 3.0)],
+        DateTime(2019), "Hermite", "POEORB")
+end
+
+# `bursts` shares one parse across a subswath, so every burst it yields must equal the one `open_slc`
+# builds on its own; a shared-state bug would show as bursts differing from their independent reads.
+if !isempty(S1_PRODUCTS)
+    p = first(S1_PRODUCTS)
+    pol = String(p.gold.polarization)
+    @testset "bursts() agrees with open_slc per burst" begin
+        for swath in 1:3
+            series = bursts(p.safe; orbit = p.eof, swath, polarization = pol)
+            @test series isa AbstractVector{<:SLC}
+            @test length(series) == nbursts(p.safe; swath, polarization = pol)
+            @test eachindex(series) == 1:length(series)
+            @test_throws BoundsError series[length(series) + 1]
+            for i in eachindex(series)
+                direct = open_slc(p.safe; orbit = p.eof, swath, burst = i, polarization = pol)
+                @test series[i].geometry == direct.geometry
+                @test series[i].identification == direct.identification
+                @test orbit(series[i]).time == orbit(direct).time
+            end
+        end
+    end
+
+    @testset "a Sentinel1Product refuses a subswath it was not opened for" begin
+        prod = Sentinel1Product(p.safe; orbit = p.eof, polarization = pol, swaths = [1, 2])
+        @test nbursts(prod, 2) == nbursts(p.safe; swath = 2, polarization = pol)
+        @test_throws "was opened for subswaths IW1, IW2, not IW3" nbursts(prod, 3)
     end
 end

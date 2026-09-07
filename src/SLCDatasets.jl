@@ -20,25 +20,35 @@ annotation XML and state vectors from a POEORB or RESORB `.EOF` file, which a Se
 not carry. Only the annotation is read, so the measurement TIFFs cost nothing. A TOPS product is three
 subswaths of bursts rather than one image; [`open_slc`](@ref) describes either the mosaic across them or
 one individual burst.
+
+An annotation document is a couple of megabytes holding a few dozen scalars, so a product's subswaths
+are parsed once into a [`Sentinel1Product`](@ref) and every geometry, burst and orbit derived from it
+reads nothing further. [`bursts`](@ref) returns a whole subswath's bursts as an
+[`SLCSeries`](@ref) — an `AbstractVector` of [`SLC`](@ref)s over that one parse, rather than one
+`open_slc` and one parse per burst.
 """
 module SLCDatasets
 
 import Dates
+import HDF5
 using Dates: DateTime
-using EzXML: parsexml, readxml, root, findfirst, findall, nodecontent, eachelement
+using EzXML: parsexml, readxml, root, findfirst, findall, nodecontent, nodename, eachelement
 using HDF5: h5open, ishdf5, read_attribute
 using Mmap: mmap
 using StaticArrays: SVector
 using ZipArchives: ZipReader, zip_name, zip_nentries, zip_readentry
 
-export open_slc, orbit, nlines, nsamples, start_datetime, stop_datetime
+export open_slc, bursts, orbit, nlines, nsamples, start_datetime, stop_datetime
 export repeat_interval, epoch_offset, nbursts
-export SLC, Identification, RadarGeometry, StateVectors
+export SLC, SLCSeries, Identification, RadarGeometry, StateVectors
+export Sentinel1Product
 export LocalFile, RemoteHTTP, RemoteS3
 
 # `LookSide`, `LookLeft` and `LookRight` are deliberately not exported: a geometry package consuming
 # this one defines its own, and exporting both makes the name ambiguous at every call site.
 
+include("util.jl")
+include("time.jl")
 include("types.jl")
 include("nisar.jl")
 include("sentinel1.jl")

@@ -40,161 +40,210 @@ orbit_path(b::NisarBackend) = string(metadata_path(b), "/orbit")
 const GEOCODED_TYPES = ("GSLC", "GCOV", "GUNW", "GOFF")
 
 """
-    nisar_band(path) -> String
+    nisar_band(h) -> String
 
-The sensor band group of a NISAR product: `"LSAR"` or `"SSAR"`.
+The sensor band group of an open NISAR product: `"LSAR"` or `"SSAR"`.
 """
-function nisar_band(path::AbstractString)
-    return h5open(path, "r") do h
-        haskey(h, SCIENCE_ROOT) || throw(ArgumentError(
-            "`$path` has no `/$SCIENCE_ROOT` group, so it is not a NISAR-format product"))
-        for band in SENSOR_BANDS
-            haskey(h[SCIENCE_ROOT], band) && return band
-        end
-        throw(ArgumentError("`$path` has none of $(join(SENSOR_BANDS, ", ")) under " *
-                            "`/$SCIENCE_ROOT`, so it is not a NISAR-format product"))
+function nisar_band(h)::String
+    haskey(h, SCIENCE_ROOT) || throw(ArgumentError(
+        "`$(HDF5.filename(h))` has no `/$SCIENCE_ROOT` group, so it is not a NISAR-format product"))
+    science = _group(h, SCIENCE_ROOT)
+    for band in SENSOR_BANDS
+        haskey(science, band) && return band
     end
+    throw(ArgumentError("`$(HDF5.filename(h))` has none of $(join(SENSOR_BANDS, ", ")) under " *
+                        "`/$SCIENCE_ROOT`, so it is not a NISAR-format product"))
 end
 
-"""
-    nisar_product_type(path, band) -> String
+nisar_band(path::AbstractString) = h5open(nisar_band, path, "r")
 
-The product type recorded in a NISAR product's identification group, as the group name that holds
-it. Early-mission products name the group `SLC` where later ones name it `RSLC`; both report
+"""
+    nisar_product_type(h, band) -> String
+
+The product type recorded in an open NISAR product's identification group, as the group name that
+holds it. Early-mission products name the group `SLC` where later ones name it `RSLC`; both report
 `RSLC`.
 """
-function nisar_product_type(path::AbstractString, band::AbstractString)
-    return h5open(path, "r") do h
-        g = h[string(SCIENCE_ROOT, "/", band)]
-        haskey(g, "identification") || throw(ArgumentError(
-            "`$path` has no `identification` group under `/$SCIENCE_ROOT/$band`"))
-        declared = _string(read(g["identification/productType"]))
-        # The declared type names the group except for the early-mission spelling.
-        declared == "SLC" && return haskey(g, "RSLC") ? "RSLC" : "SLC"
-        return declared
-    end
+function nisar_product_type(h, band::AbstractString)::String
+    g = _group(h, string(SCIENCE_ROOT, "/", band))
+    haskey(g, "identification") || throw(ArgumentError(
+        "`$(HDF5.filename(h))` has no `identification` group under `/$SCIENCE_ROOT/$band`"))
+    declared = _text(g, "identification/productType")
+    # The declared type names the group except for the early-mission spelling.
+    declared == "SLC" && return haskey(g, "RSLC") ? "RSLC" : "SLC"
+    return declared
 end
 
-# Every scalar string in a NISAR product is stored as fixed-length bytes, and HDF5.jl surfaces those
-# variously as a `String` or as a byte vector depending on the dataset. Trailing NULs are padding.
-_string(x::AbstractString) = String(rstrip(x, '\0'))
-_string(x::AbstractVector{UInt8}) = _string(String(x))
-_string(x::AbstractArray) = _string(only(x))
+nisar_product_type(path::AbstractString, band::AbstractString) =
+    h5open(h -> nisar_product_type(h, band), path, "r")
 
-"""
-    parse_cf_epoch(units) -> DateTime
+# Indexing an HDF5 file or group gives back `Union{Attribute,Dataset,Datatype,Group}`, so `read` on the
+# result infers as `Any` and every value derived from it dispatches at runtime. These accessors assert
+# what the layout says a name is, which both keeps inference concrete and turns a product whose
+# structure differs from the NISAR layout into an error naming the path rather than a `MethodError`
+# deeper in.
 
-The reference instant of a CF-convention units string such as
-`"seconds since 2025-10-28T00:00:00"`.
+@noinline _not_a(kind, parent, name) = throw(ArgumentError(
+    "`$name` under `$(HDF5.name(parent))` is a $(nameof(typeof(parent))) member that is not a " *
+    "$kind, so this is not a NISAR-format product"))
 
-Only seconds are accepted: the products this reads record times in seconds, and silently rescaling a
-different unit would corrupt every time by a constant factor.
-"""
-function parse_cf_epoch(units::AbstractString)
-    s = _string(units)
-    m = match(r"^\s*(\w+)\s+since\s+(.+?)\s*$", s)
-    m === nothing && throw(ArgumentError(
-        "cannot read a reference epoch from the units string \"$s\"; expected " *
-        "\"<unit> since <timestamp>\""))
-    unit = lowercase(m[1])
-    unit in ("second", "seconds") || throw(ArgumentError(
-        "time units are \"$unit\" in \"$s\", but only seconds are supported"))
-    stamp = replace(m[2], " " => "T")
-    # A trailing zone designator is dropped: these products are UTC, and `DateTime` carries no zone.
-    stamp = replace(stamp, r"(Z|[+-]\d{2}:?\d{2})$" => "")
-    return DateTime(stamp)
+function _dataset(parent, name::AbstractString)
+    d = parent[name]
+    d isa HDF5.Dataset || _not_a("dataset", parent, name)
+    return d
 end
 
-# Products record `zeroDopplerStartTime` to nanoseconds, which is finer than `DateTime`'s
-# milliseconds. `Identification` keeps the string so nothing is lost; this converts only where
-# millisecond resolution is enough, dropping the extra digits rather than rounding into them.
-function _truncated_datetime(s::AbstractString)
-    t = _string(s)
-    t = replace(t, r"(Z|[+-]\d{2}:?\d{2})$" => "")
-    m = match(r"^(.*\.\d{1,3})\d*$", t)
-    return DateTime(m === nothing ? t : m[1])
+function _group(parent, name::AbstractString)
+    g = parent[name]
+    g isa HDF5.Group || _not_a("group", parent, name)
+    return g
 end
 
+# `read` on a dataset infers as `Any`, because a dataset's element type is only known once the file is
+# open. So each accessor below converts to the type the layout calls for and annotates that, which keeps
+# inference concrete through the arithmetic that follows. The conversion is explicit rather than
+# `read(d, T)`, which reinterprets the stored bytes as `T` and errors on a width mismatch instead of
+# converting — a product storing a count as `Int32` or times as `Float32` is read correctly here.
+
+# A dataset's value where only a scalar is wanted.
+_scalar(parent, name::AbstractString)::Float64 = _only_number(_dataset(parent, name))
+
+# A whole-number field, stored variously as an integer or a float across product generations.
+function _scalar_int(parent, name::AbstractString)
+    d = _dataset(parent, name)
+    v = _only_number(d)
+    isinteger(v) || throw(ArgumentError(
+        "`$(HDF5.name(d))` holds $v where a whole number is expected, so this is not a " *
+        "NISAR-format product"))
+    return Int(v)
+end
+
+# A scalar dataset holds a number, a zero-dimensional array, or a one-element one depending on how the
+# product was written; `only` covers the arrays and the bare number falls through.
+_only_number(d)::Float64 = _as_number(read(d))
+_as_number(x::Number) = Float64(x)
+_as_number(x::AbstractArray) = Float64(only(x))
+
+# A fixed-length string dataset, surfaced as a `String` or as bytes; `_string` narrows either and strips
+# the NUL padding.
+_text(parent, name::AbstractString)::String = _string(read(_dataset(parent, name)))
+
+# The first and last element of a one-dimensional dataset, and its length. Reading the dataset whole
+# would transfer the entire axis — 27,000 azimuth times for a real RSLC — where only the ends are used.
+function _axis_bounds(parent, name::AbstractString)
+    d = _dataset(parent, name)
+    n = length(d)
+    n > 0 || throw(ArgumentError("`$(HDF5.name(d))` is empty, so it has no bounds"))
+    # Only the endpoints are read: the axis itself is tens of thousands of samples.
+    return _as_number(d[1]), _as_number(d[n]), n
+end
+
+# `read_attribute` has no type-asserting form, so its `Any` is narrowed here rather than at each call.
+function _units_epoch(parent, name::AbstractString)
+    d = _dataset(parent, name)
+    haskey(HDF5.attributes(d), "units") || throw(ArgumentError(
+        "`$(HDF5.name(d))` has no `units` attribute, so the epoch its times are measured from is " *
+        "unknown"))
+    units = read_attribute(d, "units")
+    return parse_cf_epoch(_string(units))
+end
+
+# Every read in the eager path goes through one open file handle. Opening a NISAR product costs about
+# as much as the metadata reads themselves, so a reader that reopened per query would spend most of its
+# time in `h5open`.
 function read_identification(b::NisarBackend)
-    return h5open(b.path, "r") do h
-        g = h[identification_path(b)]
-        get_str(name, default = "") = haskey(g, name) ? _string(read(g[name])) : default
-        return Identification(
-            get_str("missionId"),
-            get_str("productType"),
-            Int(only(read(g["absoluteOrbitNumber"]))),
-            get_str("orbitPassDirection"),
-            get_str("lookDirection"),
-            get_str("zeroDopplerStartTime"),
-            get_str("zeroDopplerEndTime"),
-            get_str("boundingPolygon"),
-        )
-    end
+    return h5open(h -> read_identification(b, h), b.path, "r")
 end
 
-function read_geometry(b::NisarBackend)
+function read_identification(b::NisarBackend, h)
+    g = _group(h, identification_path(b))
+    # An absent optional field reads as empty rather than failing: a product missing one is still
+    # usable, where one missing `absoluteOrbitNumber` is not.
+    get_str(name)::String = haskey(g, name) ? _text(g, name) : ""
+    return Identification(
+        get_str("missionId"),
+        get_str("productType"),
+        _scalar_int(g, "absoluteOrbitNumber"),
+        get_str("orbitPassDirection"),
+        get_str("lookDirection"),
+        get_str("zeroDopplerStartTime"),
+        get_str("zeroDopplerEndTime"),
+        get_str("boundingPolygon"),
+    )
+end
+
+read_geometry(b::NisarBackend) = h5open(h -> read_geometry(b, h), b.path, "r")
+
+function read_geometry(b::NisarBackend, h)
     b.product_type in GEOCODED_TYPES && throw(ArgumentError(
         "`$(b.path)` is a $(b.product_type) product, which stores its samples on a map grid and so " *
         "carries no slant-range/azimuth geometry. This package reads SLCs in radar geometry; open an " *
         "RSLC, or use a raster library for a geocoded product"))
-    return h5open(b.path, "r") do h
-        freq = h[frequency_path(b)]
-        swaths = h[swath_path(b)]
-        ident = h[identification_path(b)]
+    freq = _group(h, frequency_path(b))
+    swaths = _group(h, swath_path(b))
+    ident = _group(h, identification_path(b))
 
-        slant_range = read(freq["slantRange"])
-        zd_time = read(swaths["zeroDopplerTime"])
-        zd_spacing = only(read(swaths["zeroDopplerTimeSpacing"]))
-        center_frequency = only(read(freq["processedCenterFrequency"]))
+    near_range, far_range, nsamples = _axis_bounds(freq, "slantRange")
+    sensing_start, sensing_stop, nlines = _axis_bounds(swaths, "zeroDopplerTime")
 
-        look = _string(read(ident["lookDirection"]))
-        side = lowercase(look) == "left" ? LookLeft :
-               lowercase(look) == "right" ? LookRight :
-               throw(ArgumentError(
-                   "`$(b.path)` records lookDirection \"$look\"; expected \"Left\" or \"Right\""))
+    look = _text(ident, "lookDirection")
+    side = lowercase(look) == "left" ? LookLeft :
+           lowercase(look) == "right" ? LookRight :
+           throw(ArgumentError(
+               "`$(b.path)` records lookDirection \"$look\"; expected \"Left\" or \"Right\""))
 
+    return RadarGeometry(
+        near_range,
+        far_range,
+        _scalar(freq, "slantRangeSpacing"),
+        SPEED_OF_LIGHT / _scalar(freq, "processedCenterFrequency"),
+        1 / _scalar(swaths, "zeroDopplerTimeSpacing"),
+        sensing_start,
+        sensing_stop,
+        nlines,
+        nsamples,
+        side,
         # The azimuth times and the orbit's state vector times share one epoch in this format, so the
         # epoch is read once here and reported for both.
-        epoch = parse_cf_epoch(read_attribute(swaths["zeroDopplerTime"], "units"))
-
-        return RadarGeometry(
-            first(slant_range),
-            last(slant_range),
-            only(read(freq["slantRangeSpacing"])),
-            SPEED_OF_LIGHT / center_frequency,
-            1 / zd_spacing,
-            first(zd_time),
-            last(zd_time),
-            length(zd_time),
-            length(slant_range),
-            side,
-            epoch,
-        )
-    end
+        _units_epoch(swaths, "zeroDopplerTime"),
+    )
 end
 
-function read_orbit(b::NisarBackend)
-    return h5open(b.path, "r") do h
-        g = h[orbit_path(b)]
-        time = Vector{Float64}(read(g["time"]))
-        # Stored (N, 3) row-major, which HDF5.jl presents as (3, N).
-        pos = read(g["position"])
-        vel = read(g["velocity"])
-        size(pos, 1) == 3 || throw(ArgumentError(
-            "orbit position in `$(b.path)` has leading dimension $(size(pos, 1)), expected 3"))
-        axes(pos) == axes(vel) || throw(DimensionMismatch(
-            "orbit position and velocity in `$(b.path)` have axes $(axes(pos)) and $(axes(vel))"))
-        size(pos, 2) == length(time) || throw(DimensionMismatch(
-            "orbit in `$(b.path)` has $(length(time)) times but $(size(pos, 2)) state vectors"))
-        epoch = parse_cf_epoch(read_attribute(g["time"], "units"))
-        get_str(name, default) = haskey(g, name) ? _string(read(g[name])) : default
-        return StateVectors(
-            time,
-            [SVector{3,Float64}(pos[1, i], pos[2, i], pos[3, i]) for i in axes(pos, 2)],
-            [SVector{3,Float64}(vel[1, i], vel[2, i], vel[3, i]) for i in axes(vel, 2)],
-            epoch,
-            get_str("interpMethod", "Hermite"),
-            get_str("orbitType", "Custom"),
-        )
-    end
+read_orbit(b::NisarBackend) = h5open(h -> read_orbit(b, h), b.path, "r")
+
+function read_orbit(b::NisarBackend, h)
+    g = _group(h, orbit_path(b))
+    time = _read_vector(g, "time")
+    # Stored (N, 3) row-major, which HDF5.jl presents as (3, N).
+    pos = _read_matrix(g, "position")
+    vel = _read_matrix(g, "velocity")
+    size(pos, 1) == 3 || throw(ArgumentError(
+        "orbit position in `$(b.path)` has leading dimension $(size(pos, 1)), expected 3"))
+    axes(pos) == axes(vel) || throw(DimensionMismatch(
+        "orbit position and velocity in `$(b.path)` have axes $(axes(pos)) and $(axes(vel))"))
+    size(pos, 2) == length(time) || throw(DimensionMismatch(
+        "orbit in `$(b.path)` has $(length(time)) times but $(size(pos, 2)) state vectors"))
+    get_str(name, default)::String = haskey(g, name) ? _text(g, name) : default
+    return StateVectors(
+        time,
+        _columns_as_svectors(pos),
+        _columns_as_svectors(vel),
+        _units_epoch(g, "time"),
+        get_str("interpMethod", "Hermite"),
+        get_str("orbitType", "Custom"),
+    )
+end
+
+# A product may store these as `Float32`, so the element type is converted rather than propagated into
+# `StateVectors`, whose fields are `Float64`. `convert` is a no-op when the file already holds `Float64`.
+_read_vector(parent, name::AbstractString)::Vector{Float64} =
+    convert(Vector{Float64}, read(_dataset(parent, name))::AbstractVector)
+
+_read_matrix(parent, name::AbstractString)::Matrix{Float64} =
+    convert(Matrix{Float64}, read(_dataset(parent, name))::AbstractMatrix)
+
+# The (3, N) array HDF5.jl hands back, as N 3-vectors.
+function _columns_as_svectors(a::AbstractMatrix{Float64})
+    Base.require_one_based_indexing(a)
+    return [SVector{3,Float64}(a[1, i], a[2, i], a[3, i]) for i in axes(a, 2)]
 end

@@ -7,6 +7,8 @@ using SLCDatasets
 using SLCDatasets: LookSide, LookLeft, LookRight, SPEED_OF_LIGHT, parse_cf_epoch, NisarBackend, nisar_band,
            nisar_product_type, GEOCODED_TYPES
 using Dates
+using HDF5
+using StaticArrays: SVector
 using Test
 
 const FX = FIXTURE
@@ -125,6 +127,80 @@ end
             h["unrelated"] = 1
         end
         @test_throws "not a NISAR-format product" open_slc(empty)
+    end
+end
+
+# The stored width of a field is a property of how the product was written, not of the format: counts
+# appear as `Int32` or `Int64` and times as `Float32` or `Float64` across generations. The reader
+# converts, so a narrower product reads to the same values rather than failing or reinterpreting bytes.
+@testset "field widths the product chose do not change what is read" begin
+    mktempdir() do dir
+        wide = write_fixture_product(joinpath(dir, "wide.h5"))
+        reference = open_slc(wide)
+        ref_orbit = orbit(reference)
+
+        narrow = joinpath(dir, "narrow.h5")
+        write_fixture_product(narrow)
+        # Rewrite the orbit and the azimuth axis at single precision, and the orbit count as `Int64`.
+        h5open(narrow, "r+") do h
+            p = "science/LSAR/$(FIXTURE.product_type)"
+            for name in ("$p/metadata/orbit/time", "$p/metadata/orbit/position",
+                         "$p/metadata/orbit/velocity", "$p/swaths/zeroDopplerTime")
+                units = haskey(HDF5.attributes(h[name]), "units") ?
+                        read_attribute(h[name], "units") : nothing
+                data = Float32.(read(h[name]))
+                delete_object(h, name)
+                h[name] = data
+                units === nothing || write_attribute(h[name], "units", units)
+            end
+            delete_object(h, "science/LSAR/identification/absoluteOrbitNumber")
+            h["science/LSAR/identification/absoluteOrbitNumber"] =
+                Int64(reference.identification.absolute_orbit)
+        end
+
+        s = open_slc(narrow)
+        @test s.identification.absolute_orbit == reference.identification.absolute_orbit
+        @test s.geometry.nlines == reference.geometry.nlines
+        @test s.geometry.nsamples == reference.geometry.nsamples
+        @test s.geometry.epoch == reference.geometry.epoch
+        # Single precision is what was stored, so the values agree only to that.
+        @test s.geometry.sensing_start ≈ reference.geometry.sensing_start rtol = 1e-6
+        o = orbit(s)
+        @test length(o.time) == length(ref_orbit.time)
+        @test o.epoch == ref_orbit.epoch
+        @test eltype(o.time) === Float64
+        @test eltype(o.position) === SVector{3,Float64}
+        for i in eachindex(o.position)
+            @test o.position[i] ≈ ref_orbit.position[i] rtol = 1e-6
+            @test o.velocity[i] ≈ ref_orbit.velocity[i] rtol = 1e-6
+        end
+    end
+end
+
+# The epoch lives in a `units` attribute rather than a dataset, so a product missing it would otherwise
+# be read with whatever epoch the parse of an empty string produced.
+@testset "a missing units attribute is reported" begin
+    mktempdir() do dir
+        path = write_fixture_product(joinpath(dir, "no_units.h5"))
+        h5open(path, "r+") do h
+            delete_attribute(h["science/LSAR/$(FIXTURE.product_type)/swaths/zeroDopplerTime"],
+                             "units")
+        end
+        @test_throws "has no `units` attribute" open_slc(path)
+    end
+end
+
+# A name the layout says is a dataset but the file made a group would otherwise reach `read` and fail
+# inside HDF5; the reader names the path instead.
+@testset "a group where a dataset belongs is reported" begin
+    mktempdir() do dir
+        path = write_fixture_product(joinpath(dir, "wrong_kind.h5"))
+        h5open(path, "r+") do h
+            name = "science/LSAR/identification/absoluteOrbitNumber"
+            delete_object(h, name)
+            create_group(h, name)
+        end
+        @test_throws "is not a NISAR-format product" open_slc(path)
     end
 end
 

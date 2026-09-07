@@ -153,7 +153,8 @@ function _remote_size(url::AbstractString; netrc::Bool = true, headers = String[
         "`$url` did not answer a range request with a Content-Range header, so its length is " *
         "unknown and it cannot be read without transferring it whole. The server must support " *
         "byte ranges"))
-    return parse(Int, m[1])
+    # The group is not optional, so a match always captured it.
+    return parse(Int, m[1]::AbstractString)
 end
 
 # A sparse file: the head holds real bytes, the rest is a hole the filesystem reports as zeros. Only

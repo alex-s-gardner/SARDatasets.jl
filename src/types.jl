@@ -141,6 +141,31 @@ struct RadarGeometry
 end
 
 """
+    StateVectorTable
+
+Platform state vectors in ECEF against absolute UTC instants, as a product's orbit file records them.
+
+The intermediate a reader produces before an epoch is chosen: [`StateVectors`](@ref) is the same
+vectors with their times reduced to seconds against one epoch. The three fields are index-matched.
+"""
+struct StateVectorTable
+    time::Vector{UtcTime}
+    position::Vector{SVector{3,Float64}}
+    velocity::Vector{SVector{3,Float64}}
+
+    function StateVectorTable(time::Vector{UtcTime}, position::Vector{SVector{3,Float64}},
+                              velocity::Vector{SVector{3,Float64}})
+        axes(time) == axes(position) == axes(velocity) || throw(DimensionMismatch(
+            "state vector times, positions and velocities must be index-matched: got axes " *
+            "$(axes(time)), $(axes(position)) and $(axes(velocity))"))
+        return new(time, position, velocity)
+    end
+end
+
+Base.length(t::StateVectorTable) = length(t.time)
+Base.isempty(t::StateVectorTable) = isempty(t.time)
+
+"""
     StateVectors
 
 Platform state vectors in ECEF, and the instant they are measured from.
@@ -159,7 +184,18 @@ struct StateVectors
     epoch::DateTime
     interp_method::String
     kind::String
+
+    function StateVectors(time::Vector{Float64}, position::Vector{SVector{3,Float64}},
+                          velocity::Vector{SVector{3,Float64}}, epoch::DateTime,
+                          interp_method::String, kind::String)
+        axes(time) == axes(position) == axes(velocity) || throw(DimensionMismatch(
+            "state vector times, positions and velocities must be index-matched: got axes " *
+            "$(axes(time)), $(axes(position)) and $(axes(velocity))"))
+        return new(time, position, velocity, epoch, interp_method, kind)
+    end
 end
+
+Base.length(s::StateVectors) = length(s.time)
 
 """
     SLC <: AbstractSLC
@@ -191,6 +227,11 @@ end
 SLC(backend::AbstractSLCBackend, ident::Identification, geom::RadarGeometry) =
     SLC(backend, ident, geom, nothing)
 
+# Reading the two eager records is the same two calls for every backend, so the backend alone is enough
+# to build an `SLC`.
+SLC(backend::AbstractSLCBackend) =
+    SLC(backend, read_identification(backend), read_geometry(backend), nothing)
+
 """
     nlines(s::SLC)
     nsamples(s::SLC)
@@ -211,6 +252,45 @@ function orbit(s::SLC)
     o = read_orbit(s.backend)
     s.orbit = o
     return o
+end
+
+"""
+    SLCSeries{S} <: AbstractVector{S}
+
+Several acquisitions of one product addressed as a vector, built on request rather than up front.
+
+The bursts of a Sentinel-1 subswath are the case this exists for: they share one parsed annotation, so
+indexing builds the [`SLC`](@ref) for that burst from metadata already in hand. Every `AbstractVector`
+operation works, and `collect` materializes them all.
+
+# Examples
+
+```julia
+b = bursts(p; swath = 2)
+length(b)
+b[3]                    # built here, no re-reading of the product
+last(b).geometry.prf
+filter(s -> nlines(s) > 1000, b)
+```
+"""
+struct SLCSeries{S,F} <: AbstractVector{S}
+    build::F
+    count::Int
+end
+
+# The element type is the builder's return type, so indexing is inferable and `collect` gets a
+# concretely typed result.
+function SLCSeries(build, count::Integer, ::Type{S}) where {S}
+    count >= 0 || throw(ArgumentError("an SLCSeries cannot have $count elements"))
+    return SLCSeries{S,typeof(build)}(build, Int(count))
+end
+
+Base.size(s::SLCSeries) = (s.count,)
+Base.IndexStyle(::Type{<:SLCSeries}) = IndexLinear()
+
+function Base.getindex(s::SLCSeries, i::Int)
+    @boundscheck checkbounds(s, i)
+    return s.build(i)
 end
 
 Base.show(io::IO, s::SLC) = print(io, "SLC(", s.identification.product_type, ", ",

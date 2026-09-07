@@ -9,6 +9,10 @@
 # there are two defensible geometries and this reads both: the mosaic spanning the subswaths, and one
 # individual burst. They are `loadMetadataSlc` and `loadMetadata` in hyp3-autorift's `testGeogrid.py`,
 # which is the reference this reproduces field for field.
+#
+# An annotation document is a couple of megabytes and holds a few dozen scalars the reader wants, so the
+# subswaths a product is opened for are parsed once into `Sentinel1Product` and every geometry, burst and
+# orbit is derived from that. Nothing here re-reads the container.
 
 # Sentinel-1 looks right, on every acquisition of the mission. The annotation carries no look-direction
 # field, so unlike the NISAR path this is a constant rather than something read from the product.
@@ -25,21 +29,7 @@ const S1_ORBIT_PADDING = 60.0
 # an ISCE3-derived Doppler LUT needs the same value.
 const S1_EPOCH_OFFSET_DAYS = 2
 
-"""
-    Sentinel1Backend <: AbstractSLCBackend
-
-A Sentinel-1 TOPS product: the container, the orbit file, and which part of the product to describe.
-
-`burst === nothing` selects the mosaic across `swaths`; an integer selects that 1-based burst of the
-single subswath in `swaths`.
-"""
-struct Sentinel1Backend <: AbstractSLCBackend
-    path::String
-    orbit_path::String
-    polarization::String
-    swaths::Vector{Int}
-    burst::Union{Nothing,Int}
-end
+const S1_SUBSWATHS = 1:3
 
 """
     is_safe_product(path) -> Bool
@@ -52,9 +42,12 @@ still readable.
 function is_safe_product(path::AbstractString)
     isdir(path) && return isfile(joinpath(path, "manifest.safe"))
     isfile(path) || return false
-    # Reading the central directory is enough; the measurement TIFFs are never touched.
+    # Reading the central directory is enough; the measurement TIFFs are never touched. The names are
+    # generated rather than collected so the scan stops at the manifest, which is near the front.
     return try
-        with_zip(r -> any(endswith("manifest.safe"), zip_names(r)), path)
+        with_zip(path) do r
+            any(i -> endswith(zip_name(r, i), "manifest.safe"), 1:zip_nentries(r))
+        end
     catch
         false
     end
@@ -69,64 +62,127 @@ function with_zip(f, path::AbstractString)
     end
 end
 
+# Every entry name in an archive. The readers filter while listing rather than calling this, so it
+# exists for a caller that genuinely wants the whole central directory.
 zip_names(r) = [zip_name(r, i) for i in 1:zip_nentries(r)]
 
 # An annotation file is `annotation/s1a-iw1-slc-hh-....xml`. The parallel `annotation/calibration/` and
 # `annotation/rfi/` trees hold same-named files for products this package does not read, so matching on
 # the file name alone would pick one of those up; the parent directory has to be `annotation` itself.
 function _is_annotation(name::AbstractString, id_str::AbstractString)
-    parts = split(name, '/')
-    length(parts) >= 2 || return false
-    return parts[end - 1] == "annotation" && occursin(id_str, parts[end])
+    endswith(name, ".xml") || return false
+    slash = findlast('/', name)
+    slash === nothing && return false
+    occursin(id_str, SubString(name, slash + 1)) || return false
+    rest = SubString(name, 1, slash - 1)
+    prev = findlast('/', rest)
+    return SubString(rest, something(prev, 0) + 1) == "annotation"
+end
+
+# The file-name part of a zip entry. Only for a name `_is_annotation` accepted, which is what guarantees
+# the separator is there.
+function _zip_basename(name::AbstractString)
+    slash = findlast('/', name)
+    slash === nothing && throw(ArgumentError("`$name` names no directory, so it has no file part"))
+    return SubString(name, slash + 1)
 end
 
 _swath_id(swath::Integer, pol::AbstractString) = string("iw", swath, "-slc-", lowercase(pol))
+
+@noinline _no_annotation(path, swath, pol) = throw(ArgumentError(
+    "`$path` has no annotation file for subswath IW$swath polarization $(uppercase(pol))"))
 
 """
     annotation_xml(path, swath, polarization) -> String
 
 The text of the annotation XML for one subswath and polarization of a SAFE product.
 """
-function annotation_xml(path::AbstractString, swath::Integer, polarization::AbstractString)
-    id_str = _swath_id(swath, polarization)
-    if isdir(path)
-        dir = joinpath(path, "annotation")
-        isdir(dir) || throw(ArgumentError("`$path` has no `annotation` directory"))
-        hits = filter(f -> occursin(id_str, f) && endswith(f, ".xml"), readdir(dir))
-        isempty(hits) && throw(ArgumentError(
-            "`$path` has no annotation file for subswath IW$swath polarization " *
-            "$(uppercase(polarization))"))
-        return read(joinpath(dir, only(sort(hits))), String)
-    end
-    return with_zip(path) do r
-        hits = filter(n -> _is_annotation(n, id_str) && endswith(n, ".xml"), zip_names(r))
-        isempty(hits) && throw(ArgumentError(
-            "`$path` has no annotation file for subswath IW$swath polarization " *
-            "$(uppercase(polarization))"))
-        return zip_readentry(r, only(sort(hits)), String)
-    end
+annotation_xml(path::AbstractString, swath::Integer, polarization::AbstractString) =
+    only(annotation_xml(path, (swath,), polarization))
+
+"""
+    AnnotationTree
+
+The `annotation/` entries of an open SAFE container, listed once.
+
+A zip must be memory-mapped and its central directory parsed to reach any entry, and a product's
+polarizations and its per-subswath annotations are both answered from that one listing. Holding it makes
+opening a product one traversal rather than one per query.
+"""
+struct AnnotationTree{C}
+    path::String
+    container::C          # the `ZipReader`, or the `annotation` directory of a `.SAFE`
+    names::Vector{String} # entry names as the container addresses them
 end
 
 """
+    with_annotations(f, path)
+
+Call `f` on the [`AnnotationTree`](@ref) of the SAFE product at `path`, however it is packaged.
+"""
+function with_annotations(f, path::AbstractString)
+    if isdir(path)
+        dir = joinpath(path, "annotation")
+        isdir(dir) || throw(ArgumentError("`$path` has no `annotation` directory"))
+        names = filter(n -> occursin("-slc-", n) && endswith(n, ".xml"), readdir(dir))
+        return f(AnnotationTree(String(path), dir, names))
+    end
+    return with_zip(path) do r
+        names = [zip_name(r, i) for i in 1:zip_nentries(r) if _is_annotation(zip_name(r, i), "-slc-")]
+        return f(AnnotationTree(String(path), r, names))
+    end
+end
+
+# The name of a zip entry or of a file in the `annotation` directory, reduced to the file part the
+# subswath and polarization are named in.
+_entry_file(r::AnnotationTree{<:AbstractString}, name) = name
+_entry_file(::AnnotationTree, name) = _zip_basename(name)
+
+_read_entry(r::AnnotationTree{<:AbstractString}, name) = read(joinpath(r.container, name), String)
+_read_entry(r::AnnotationTree, name) = zip_readentry(r.container, name, String)
+
+"""
+    read_annotation_entry(r::AnnotationTree, swath, polarization) -> String
+
+The annotation XML of one subswath and polarization, from an already-listed container.
+"""
+function read_annotation_entry(r::AnnotationTree, swath::Integer, polarization::AbstractString)
+    id_str = _swath_id(swath, polarization)
+    hits = filter(n -> occursin(id_str, _entry_file(r, n)), r.names)
+    isempty(hits) && _no_annotation(r.path, swath, polarization)
+    return _read_entry(r, only(sort!(hits)))
+end
+
+"""
+    annotation_xml(path, swaths, polarization) -> Vector{String}
+
+The annotation XML of several subswaths, read in one pass over the container.
+"""
+annotation_xml(path::AbstractString, swaths, polarization::AbstractString) =
+    with_annotations(r -> annotation_xml(r, swaths, polarization), path)
+
+annotation_xml(r::AnnotationTree, swaths, polarization::AbstractString) =
+    [read_annotation_entry(r, s, polarization) for s in swaths]
+
+"""
     safe_polarizations(path) -> Vector{String}
+    safe_polarizations(r::AnnotationTree) -> Vector{String}
 
 The polarizations a SAFE product carries, lowercase, in the order the annotation files sort.
 """
-function safe_polarizations(path::AbstractString)
-    names = isdir(path) ? (isdir(joinpath(path, "annotation")) ?
-                           readdir(joinpath(path, "annotation")) : String[]) :
-            with_zip(r -> [split(n, '/')[end] for n in zip_names(r)
-                           if _is_annotation(n, "-slc-")], path)
+safe_polarizations(path::AbstractString) = with_annotations(safe_polarizations, path)
+
+function safe_polarizations(r::AnnotationTree)
     pols = String[]
-    for n in names
-        m = match(r"-slc-(hh|hv|vh|vv)-", n)
+    for n in r.names
+        m = match(r"-slc-(hh|hv|vh|vv)-", _entry_file(r, n))
         m === nothing && continue
         m[1] in pols || push!(pols, m[1])
     end
     isempty(pols) && throw(ArgumentError(
-        "`$path` carries no annotation files naming a polarization, so it is not a readable " *
+        "`$(r.path)` carries no annotation files naming a polarization, so it is not a readable " *
         "Sentinel-1 SLC product"))
-    return sort(pols)
+    return sort!(pols)
 end
 
 """
@@ -137,43 +193,25 @@ The polarization to read when the caller names none.
 Co-polarized channels are preferred over cross-polarized ones, and the order otherwise follows
 `testGeogrid.py`'s `getPol`, so a dual-polarization product reads the same channel the reference does.
 """
-function default_polarization(path::AbstractString)
-    available = safe_polarizations(path)
+default_polarization(path::AbstractString) = _preferred_polarization(safe_polarizations(path))
+
+function _preferred_polarization(available)
     for pol in ("vv", "vh", "hh", "hv")
         pol in available && return pol
     end
     return first(available)
 end
 
-# The annotation records times as ISO-8601 to microseconds, which `DateTime` cannot hold. Times are
-# therefore parsed to a `DateTime` plus a residual, and only ever reported as a `Float64` offset from
-# the epoch, so no precision is lost to the millisecond truncation a bare `DateTime` would impose.
-struct UtcTime
-    datetime::DateTime      # truncated to whole seconds
-    seconds::Float64        # fractional part, in [0, 1)
+@noinline _no_element(path) = throw(ArgumentError("the annotation XML has no `$path` element"))
+
+function _findtext(node, path)
+    hit = findfirst(path, node)
+    hit === nothing && _no_element(path)
+    return strip(nodecontent(hit))
 end
 
-function parse_utc(s::AbstractString)
-    t = strip(_string(s))
-    t = replace(t, r"(Z|[+-]\d{2}:?\d{2})$" => "")
-    m = match(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d+))?$", t)
-    m === nothing && throw(ArgumentError(
-        "cannot read a UTC time from \"$t\"; expected `YYYY-MM-DDThh:mm:ss[.ffffff]`"))
-    whole = DateTime(m[1])
-    frac = m[2] === nothing ? 0.0 : parse(Float64, string("0.", m[2]))
-    return UtcTime(whole, frac)
-end
-
-# Seconds from one UTC instant to another. The whole-second difference is exact in `Int64`
-# milliseconds and the sub-second parts are added afterwards, so the result does not inherit the
-# rounding a `DateTime`-only subtraction would introduce.
-function seconds_between(from::UtcTime, to::UtcTime)
-    whole = Dates.value(to.datetime - from.datetime) / 1000
-    return whole + (to.seconds - from.seconds)
-end
-
-Base.isless(a::UtcTime, b::UtcTime) =
-    a.datetime == b.datetime ? a.seconds < b.seconds : a.datetime < b.datetime
+_findfloat(node, path) = parse(Float64, _findtext(node, path))
+_findint(node, path) = parse(Int, _findtext(node, path))
 
 # The epoch a product's times are reported against, truncated to the whole second.
 #
@@ -185,17 +223,14 @@ Base.isless(a::UtcTime, b::UtcTime) =
 # epoch is added back.
 epoch_of(t::UtcTime) = t.datetime - Dates.Day(S1_EPOCH_OFFSET_DAYS)
 
-_findtext(node, path) = begin
-    hit = findfirst(path, node)
-    hit === nothing && throw(ArgumentError("the annotation XML has no `$path` element"))
-    strip(nodecontent(hit))
-end
+"""
+    SubswathAnnotation
 
-_findfloat(node, path) = parse(Float64, _findtext(node, path))
-_findint(node, path) = parse(Int, _findtext(node, path))
+One subswath's annotation, reduced to the geometry fields.
 
-# One subswath's annotation, reduced to the geometry fields. Everything a burst needs that is shared
-# across the subswath's bursts is read once here.
+Everything a burst needs that is shared across the subswath's bursts is held once here, so a burst
+costs no parsing of its own.
+"""
 struct SubswathAnnotation
     swath::Int
     polarization::String
@@ -212,6 +247,8 @@ struct SubswathAnnotation
     burst_start::Vector{UtcTime}
 end
 
+nbursts(a::SubswathAnnotation) = length(a.burst_start)
+
 function read_annotation(xml::AbstractString, swath::Integer)
     doc = parsexml(xml)
     r = root(doc)
@@ -220,12 +257,13 @@ function read_annotation(xml::AbstractString, swath::Integer)
     radar_frequency = _findfloat(r, "generalAnnotation/productInformation/radarFrequency")
     slant_range_time = _findfloat(r, "imageAnnotation/imageInformation/slantRangeTime")
 
-    burst_start = UtcTime[]
-    for b in findall("swathTiming/burstList/burst", r)
-        push!(burst_start, parse_utc(_findtext(b, "azimuthTime")))
-    end
-    isempty(burst_start) && throw(ArgumentError(
+    bursts = findall("swathTiming/burstList/burst", r)
+    isempty(bursts) && throw(ArgumentError(
         "the annotation for subswath IW$swath lists no bursts"))
+    burst_start = Vector{UtcTime}(undef, length(bursts))
+    for (i, b) in enumerate(bursts)
+        burst_start[i] = parse_utc(_findtext(b, "azimuthTime"))
+    end
 
     # These three conversions must not be reordered: they reproduce ISCE3's values to the bit, and a
     # different association of the same operations would change the last digit.
@@ -246,8 +284,108 @@ function read_annotation(xml::AbstractString, swath::Integer)
     )
 end
 
-read_annotation(b::Sentinel1Backend, swath::Integer) =
-    read_annotation(annotation_xml(b.path, swath, b.polarization), swath)
+"""
+    Sentinel1Product(path; orbit, polarization = nothing, swaths = 1:3)
+
+A Sentinel-1 TOPS product with its annotation already parsed.
+
+`swaths` names the subswaths to read; each is parsed once and held, so every geometry, burst and orbit
+derived from this product costs no further parsing of the container. Build the acquisitions with
+[`open_slc`](@ref) or [`bursts`](@ref) rather than reaching into the fields.
+"""
+struct Sentinel1Product
+    path::String
+    orbit_path::String
+    polarization::String
+    # Parallel to `swaths`: `annotations[i]` is the annotation of subswath `swaths[i]`. `swaths` is
+    # sorted ascending, which is what makes the first entry the near-range subswath of a mosaic.
+    swaths::Vector{Int}
+    annotations::Vector{SubswathAnnotation}
+end
+
+Sentinel1Product(path::AbstractString; orbit::AbstractString,
+                 polarization = nothing, swaths = S1_SUBSWATHS) =
+    with_annotations(r -> Sentinel1Product(r; orbit, polarization, swaths), path)
+
+# One listing of the container serves the polarization query and every subswath's annotation.
+function Sentinel1Product(r::AnnotationTree; orbit::AbstractString,
+                          polarization = nothing, swaths = S1_SUBSWATHS)
+    # Sorted here so `annotations` is near-range first, which is what makes a mosaic's first entry the
+    # subswath that sets its range origin.
+    selected = sort!(collect(Int, swaths))
+    available = safe_polarizations(r)
+    pol = polarization === nothing ? _preferred_polarization(available) :
+          lowercase(String(polarization))
+    pol in available || _no_polarization(r.path, available, pol)
+    annotations = [read_annotation(read_annotation_entry(r, s, pol), s) for s in selected]
+    return Sentinel1Product(r.path, String(orbit), pol, selected, annotations)
+end
+
+@noinline _no_polarization(path, available, pol) = throw(ArgumentError(
+    "`$path` carries polarization$(length(available) == 1 ? " " : "s ")" *
+    "$(join(uppercase.(available), ", ")), not $(uppercase(pol))"))
+
+Base.show(io::IO, p::Sentinel1Product) =
+    print(io, "Sentinel1Product(", basename(p.path), ", IW",
+          join(p.swaths, "+"), ", ", uppercase(p.polarization), ")")
+
+"""
+    annotation(p::Sentinel1Product, swath) -> SubswathAnnotation
+
+The parsed annotation of one subswath of `p`, which must be among the ones it was opened for.
+"""
+function annotation(p::Sentinel1Product, swath::Integer)
+    i = findfirst(==(Int(swath)), p.swaths)
+    i === nothing && throw(ArgumentError(
+        "`$(p.path)` was opened for subswath$(length(p.swaths) == 1 ? " " : "s ")" *
+        "$(join(("IW$s" for s in p.swaths), ", ")), not IW$swath"))
+    return p.annotations[i]
+end
+
+"""
+    nbursts(p::Sentinel1Product, swath) -> Int
+    nbursts(path; swath = 1, polarization = nothing) -> Int
+
+How many bursts one subswath of a Sentinel-1 product carries.
+
+Needed to address bursts by index without opening each in turn, and it reads only the annotation XML.
+"""
+nbursts(p::Sentinel1Product, swath::Integer) = nbursts(annotation(p, swath))
+
+function nbursts(path::AbstractString; swath::Integer = 1, polarization = nothing)
+    return with_annotations(path) do r
+        pol = polarization === nothing ? _preferred_polarization(safe_polarizations(r)) :
+              lowercase(String(polarization))
+        return nbursts(read_annotation(read_annotation_entry(r, swath, pol), swath))
+    end
+end
+
+"""
+    Sentinel1Backend <: AbstractSLCBackend
+
+Which part of a parsed [`Sentinel1Product`](@ref) an [`SLC`](@ref) describes.
+
+A mosaic spans every subswath the product was opened for, so it has no subswath or burst of its own and
+both are `nothing`. An individual burst names the subswath it belongs to and its own 1-based index.
+"""
+struct Sentinel1Backend <: AbstractSLCBackend
+    product::Sentinel1Product
+    swath::Union{Nothing,Int}
+    burst::Union{Nothing,Int}
+end
+
+Sentinel1Backend(p::Sentinel1Product) = Sentinel1Backend(p, nothing, nothing)
+
+_path(b::Sentinel1Backend) = b.product.path
+
+# Whether this describes the mosaic rather than one burst. Both fields are `nothing` together, so either
+# answers it; `swath` is the one asked because it is what the mosaic lacks.
+_is_mosaic(b::Sentinel1Backend) = b.swath === nothing
+
+# The subswath whose annotation sets the times: the near-range one for a mosaic, the burst's own
+# otherwise.
+_leading_annotation(b::Sentinel1Backend) =
+    _is_mosaic(b) ? first(b.product.annotations) : annotation(b.product, b.swath)
 
 # A burst's last line is a whole number of azimuth lines after its first, rather than a time read from
 # the product: the annotation gives only the start of each burst, and every burst carries
@@ -255,21 +393,29 @@ read_annotation(b::Sentinel1Backend, swath::Integer) =
 _burst_stop(a::SubswathAnnotation, start::UtcTime) =
     _advance(start, (a.lines_per_burst - 1) * a.azimuth_time_interval)
 
-_advance(t::UtcTime, seconds::Real) = UtcTime(t.datetime, t.seconds + seconds)
-
 # The instant every time in the result is measured from: the first burst of the lowest-numbered
 # subswath asked for. It is that burst rather than the earliest line in the product because the
 # reference takes its epoch from `bursts[0].orbit` of `swaths[0]` — and in a TOPS product IW1 does not
 # start first, so the two differ by about two seconds.
-_anchor(b::Sentinel1Backend, a::SubswathAnnotation) =
-    b.burst === nothing ? first(a.burst_start) : a.burst_start[_check_burst(b, a)]
+function _anchor(b::Sentinel1Backend)
+    a = _leading_annotation(b)
+    return _is_mosaic(b) ? first(a.burst_start) : a.burst_start[_check_burst(b, a)]
+end
+
+function _check_burst(b::Sentinel1Backend, a::SubswathAnnotation)
+    n = nbursts(a)
+    i = b.burst
+    1 <= i <= n || throw(ArgumentError(
+        "`$(_path(b))` subswath IW$(a.swath) has $n bursts, so burst $i does not exist"))
+    return i
+end
 
 function read_identification(b::Sentinel1Backend)
-    a = read_annotation(b, first(b.swaths))
-    first_line, last_line = if b.burst === nothing
+    a = _leading_annotation(b)
+    first_line, last_line = if _is_mosaic(b)
         # The bounds of what this SLC describes, which for a mosaic spans the subswaths rather than
         # being the one subswath's `productFirst/LastLineUtcTime`.
-        _mosaic_window([read_annotation(b, s) for s in b.swaths])
+        _mosaic_window(b.product.annotations)
     else
         start = a.burst_start[_check_burst(b, a)]
         start, _burst_stop(a, start)
@@ -288,27 +434,11 @@ function read_identification(b::Sentinel1Backend)
     )
 end
 
-function _utc_string(t::UtcTime)
-    # Normalized so a fractional part carried past one second reads as the time it denotes.
-    extra = floor(Int, t.seconds)
-    frac = t.seconds - extra
-    stamp = Dates.format(t.datetime + Dates.Second(extra), "yyyy-mm-ddTHH:MM:SS")
-    return string(stamp, ".", lpad(round(Int, frac * 1_000_000), 6, '0'))
-end
-
-function _check_burst(b::Sentinel1Backend, a::SubswathAnnotation)
-    n = length(a.burst_start)
-    i = b.burst
-    1 <= i <= n || throw(ArgumentError(
-        "`$(b.path)` subswath IW$(a.swath) has $n bursts, so burst $i does not exist"))
-    return i
-end
-
 # The mosaic's geometry, matching `loadMetadataSlc`. The near-range subswath sets the range origin, the
 # azimuth spacing and the wavelength; the sensing window is the union over the subswaths; and the width
 # reaches from the near subswath's first sample to the far subswath's last.
 function _mosaic_geometry(b::Sentinel1Backend)
-    annotations = [read_annotation(b, s) for s in b.swaths]
+    annotations = b.product.annotations
     near = first(annotations)
     far = last(annotations)
 
@@ -319,16 +449,16 @@ function _mosaic_geometry(b::Sentinel1Backend)
     start, stop = _mosaic_window(annotations)
 
     # IW subswaths are numbered outward from nadir, so the highest-numbered one asked for is the one
-    # that sets the far edge. `b.swaths` is sorted, which is what makes `far` that subswath.
+    # that sets the far edge. `swaths` is sorted, which is what makes `far` that subswath.
     far.starting_range >= starting_range || throw(ArgumentError(
-        "`$(b.path)` puts subswath IW$(far.swath) nearer in range than IW$(near.swath), so the " *
+        "`$(_path(b))` puts subswath IW$(far.swath) nearer in range than IW$(near.swath), so the " *
         "subswaths are not ordered outward and the mosaic's width cannot be derived"))
     nsamples = round(Int, (far.starting_range - starting_range) / range_pixel_spacing) +
                far.samples_per_burst
     far_range = starting_range + (nsamples - 1.0) * range_pixel_spacing
     nlines = round(Int, seconds_between(start, stop) * prf) + 1
 
-    epoch = epoch_of(_anchor(b, near))
+    epoch = epoch_of(_anchor(b))
     origin = UtcTime(epoch, 0.0)
     return RadarGeometry(
         starting_range,
@@ -364,9 +494,8 @@ end
 # One burst's geometry, matching `loadMetadata`: the burst's own start time and the subswath's full
 # burst extent, with no mosaicking.
 function _burst_geometry(b::Sentinel1Backend)
-    a = read_annotation(b, only(b.swaths))
-    i = _check_burst(b, a)
-    start = a.burst_start[i]
+    a = annotation(b.product, b.swath)
+    start = a.burst_start[_check_burst(b, a)]
     stop = _burst_stop(a, start)
 
     prf = 1 / a.azimuth_time_interval
@@ -389,30 +518,92 @@ function _burst_geometry(b::Sentinel1Backend)
 end
 
 read_geometry(b::Sentinel1Backend) =
-    b.burst === nothing ? _mosaic_geometry(b) : _burst_geometry(b)
+    _is_mosaic(b) ? _mosaic_geometry(b) : _burst_geometry(b)
+
+# The `UTC=` prefix an EOF's time fields carry. A reader that kept it would fail to parse rather than
+# misread, but the times are the only thing tying the orbit to the product's clock.
+_strip_utc_prefix(s::AbstractString) =
+    startswith(s, "UTC=") ? SubString(s, 5) : SubString(s, 1, lastindex(s))
 
 """
-    read_eof_state_vectors(path) -> Vector
+    read_eof_state_vectors(path; from = nothing, to = nothing, padding = 0.0) -> StateVectorTable
 
-Every orbit state vector in a POEORB or RESORB `.EOF` file, as `(UtcTime, position, velocity)`.
+The orbit state vectors of a POEORB or RESORB `.EOF` file.
 
-The file's `UTC` fields carry a `UTC=` prefix, which is stripped; a reader that kept it would fail to
-parse rather than misread, but the times are the only thing tying the orbit to the product's clock.
+With `from` and `to` given, only the vectors within `padding` seconds of that window are kept, and the
+scan stops once past it. A POEORB covers just over a day at one vector every ten seconds while an
+acquisition needs a few, so filtering during the scan rather than after it is what keeps reading one
+cheap: a record whose time falls outside the window has its six numbers skipped entirely.
 """
-function read_eof_state_vectors(path::AbstractString)
+function read_eof_state_vectors(path::AbstractString; from::Union{Nothing,UtcTime} = nothing,
+                                to::Union{Nothing,UtcTime} = nothing, padding::Real = 0.0)
     doc = readxml(path)
     list = findfirst("//Data_Block/List_of_OSVs", root(doc))
     list === nothing && throw(ArgumentError(
         "`$path` has no `Data_Block/List_of_OSVs` element, so it is not a Sentinel-1 orbit file"))
-    out = Tuple{UtcTime,SVector{3,Float64},SVector{3,Float64}}[]
+
+    times = UtcTime[]
+    positions = SVector{3,Float64}[]
+    velocities = SVector{3,Float64}[]
+    any_record = false
     for osv in eachelement(list)
-        time = parse_utc(replace(_findtext(osv, "UTC"), r"^UTC=" => ""))
-        pos = SVector{3,Float64}(_findfloat(osv, "X"), _findfloat(osv, "Y"), _findfloat(osv, "Z"))
-        vel = SVector{3,Float64}(_findfloat(osv, "VX"), _findfloat(osv, "VY"), _findfloat(osv, "VZ"))
-        push!(out, (time, pos, vel))
+        any_record = true
+        t = _osv_time(osv)
+        if to !== nothing && seconds_between(to, t) > padding
+            # The vectors are in ascending time order, so nothing later can fall in the window.
+            break
+        end
+        # Strictly inside the leading edge, matching `s1reader`: a vector landing exactly `padding`
+        # before the window is not kept, and admitting it would hand an interpolator one more vector
+        # than ISCE3 sees.
+        from !== nothing && seconds_between(from, t) <= -padding && continue
+        pos, vel = _osv_vectors(osv)
+        push!(times, t)
+        push!(positions, pos)
+        push!(velocities, vel)
     end
-    isempty(out) && throw(ArgumentError("`$path` lists no orbit state vectors"))
-    return out
+    any_record || throw(ArgumentError("`$path` lists no orbit state vectors"))
+    return StateVectorTable(times, positions, velocities)
+end
+
+# One record's time, found by scanning its children rather than by an XPath query: the query builds and
+# frees a node set per call, which over the thousands of records in a POEORB dominates the read.
+function _osv_time(osv)
+    for f in eachelement(osv)
+        nodename(f) == "UTC" && return parse_utc(_strip_utc_prefix(strip(nodecontent(f))))
+    end
+    throw(ArgumentError("an `OSV` record in the orbit file has no `UTC` field"))
+end
+
+function _osv_vectors(osv)
+    x = y = z = vx = vy = vz = 0.0
+    found = 0
+    for f in eachelement(osv)
+        n = nodename(f)
+        # The six names are one or two characters; the record's other fields are longer and are not
+        # parsed, since their contents are not numbers.
+        length(n) <= 2 || continue
+        v = parse(Float64, strip(nodecontent(f)))
+        if n == "X"
+            x = v
+        elseif n == "Y"
+            y = v
+        elseif n == "Z"
+            z = v
+        elseif n == "VX"
+            vx = v
+        elseif n == "VY"
+            vy = v
+        elseif n == "VZ"
+            vz = v
+        else
+            continue
+        end
+        found += 1
+    end
+    found == 6 || throw(ArgumentError(
+        "an `OSV` record in the orbit file is missing one of its X/Y/Z/VX/VY/VZ fields"))
+    return SVector(x, y, z), SVector(vx, vy, vz)
 end
 
 # The state vectors kept are those within `S1_ORBIT_PADDING` of the anchor burst's own window — not of
@@ -420,33 +611,27 @@ end
 # burst's, so a mosaic's orbit covers that burst rather than the full acquisition; widening it here
 # would hand an interpolator a different set of vectors than ISCE3 sees.
 function read_orbit(b::Sentinel1Backend)
-    a = read_annotation(b, first(b.swaths))
-    start = _anchor(b, a)
+    a = _leading_annotation(b)
+    start = _anchor(b)
     stop = _burst_stop(a, start)
+    orbit_path = b.product.orbit_path
+
+    table = read_eof_state_vectors(orbit_path; from = start, to = stop,
+                                   padding = S1_ORBIT_PADDING)
+    isempty(table.time) && throw(ArgumentError(
+        "`$orbit_path` has no state vectors within $(S1_ORBIT_PADDING) s of the acquisition " *
+        "window of `$(_path(b))`; it is probably the orbit file of a different granule"))
 
     epoch = UtcTime(epoch_of(start), 0.0)
-    times = Float64[]
-    positions = SVector{3,Float64}[]
-    velocities = SVector{3,Float64}[]
-    for (t, pos, vel) in read_eof_state_vectors(b.orbit_path)
-        dt_start = seconds_between(start, t)
-        dt_stop = seconds_between(stop, t)
-        dt_stop > S1_ORBIT_PADDING && break
-        dt_start > -S1_ORBIT_PADDING || continue
-        push!(times, seconds_between(epoch, t))
-        push!(positions, pos)
-        push!(velocities, vel)
-    end
-    isempty(times) && throw(ArgumentError(
-        "`$(b.orbit_path)` has no state vectors within $(S1_ORBIT_PADDING) s of the acquisition " *
-        "window of `$(b.path)`; it is probably the orbit file of a different granule"))
-
     return StateVectors(
-        times, positions, velocities, epoch.datetime,
+        [seconds_between(epoch, t) for t in table.time],
+        table.position,
+        table.velocity,
+        epoch.datetime,
         # An EOF carries tabulated vectors with no interpolation method of its own. Hermite is what
         # `s1reader` builds an `isce3.core.Orbit` with by default.
         "Hermite",
-        _eof_kind(b.orbit_path),
+        _eof_kind(orbit_path),
     )
 end
 
@@ -457,16 +642,4 @@ function _eof_kind(path::AbstractString)
     occursin("POEORB", name) && return "POEORB"
     occursin("RESORB", name) && return "RESORB"
     return "Custom"
-end
-
-"""
-    nbursts(path; swath = 1, polarization = nothing) -> Int
-
-How many bursts one subswath of a Sentinel-1 product carries.
-
-Needed to address bursts by index without opening each in turn, and it reads only the annotation XML.
-"""
-function nbursts(path::AbstractString; swath::Integer = 1, polarization = nothing)
-    pol = polarization === nothing ? default_polarization(path) : lowercase(String(polarization))
-    return length(read_annotation(annotation_xml(path, swath, pol), swath).burst_start)
 end
