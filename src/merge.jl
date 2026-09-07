@@ -82,43 +82,30 @@ function merge_bursts(slcs::AbstractVector{<:AbstractSLC};
                                   _merge_orbit_path(backends)))
 end
 
-# The backend of one burst, refused unless it is one: a mosaic has no subswath to place bursts in, and
-# another sensor's product is not made of bursts at all.
-function _merge_backend(s::AbstractSLC, i::Integer)
-    b = s.backend
-    if b isa Sentinel1Backend
-        b.swath === nothing && throw(ArgumentError(
-            "acquisition $i describes the mosaic across `$(_path(b))`'s subswaths rather than a " *
-            "burst of one. Merge the bursts of a single subswath, which `bursts(path; swath)` " *
-            "returns"))
-        return b
-    end
-    b isa AsfBurstBackend && return b
-    throw(ArgumentError(
-        "acquisition $i is a $(nameof(typeof(b))) rather than a Sentinel-1 burst, and only " *
-        "Sentinel-1 bursts merge"))
+# The backend of one burst, refused unless it is one. A mosaic is a `Sentinel1Backend` without a subswath
+# to place bursts in, so it is turned away by name; anything that is not a burst backend at all cannot
+# answer the questions a merge asks of one.
+_merge_backend(s::AbstractSLC, i::Integer) = _as_burst(s.backend, i)
+
+function _as_burst(b::Sentinel1Backend, i::Integer)
+    b.swath === nothing && throw(ArgumentError(
+        "acquisition $i describes the mosaic across `$(_path(b))`'s subswaths rather than a burst of " *
+        "one. Merge the bursts of a single subswath, which `bursts(path; swath)` returns"))
+    return b
 end
 
-# Which burst of which subswath a backend describes, whatever delivered it, and which product it
-# describes it from. `_burst_source` is what a burst must agree on for the merge to be placing bursts of
-# one acquisition: the granule for an ASF burst, the container for a `.SAFE` one.
-_burst_index(b::Sentinel1Backend) = b.burst::Int
-_burst_index(b::AsfBurstBackend) = b.source.burst
-_burst_swath(b::Sentinel1Backend) = b.swath::Int
-_burst_swath(b::AsfBurstBackend) = b.source.swath
-_orbit_path(b::Sentinel1Backend) = b.product.orbit_path
-_orbit_path(b::AsfBurstBackend) = b.orbit_path
-_burst_source(b::Sentinel1Backend) = b.product.path
-_burst_source(b::AsfBurstBackend) = b.source.slc
-_burst_polarization(b::Sentinel1Backend) = lowercase(b.product.polarization)
-_burst_polarization(b::AsfBurstBackend) = lowercase(b.source.polarization)
+_as_burst(b::AbstractBurstBackend, ::Integer) = b
+
+_as_burst(b::AbstractSLCBackend, i::Integer) = throw(ArgumentError(
+    "acquisition $i is a $(nameof(typeof(b))) rather than a Sentinel-1 burst, and only Sentinel-1 " *
+    "bursts merge"))
 
 # The one subswath and consecutive burst range the given bursts amount to.
 function _merge_extent(backends::AbstractVector)
-    swath = _burst_swath(first(backends))
+    swath = burst_swath(first(backends))
     same = typeof(first(backends))
-    source = _burst_source(first(backends))
-    polarization = _burst_polarization(first(backends))
+    source = burst_source(first(backends))
+    polarization = burst_polarization(first(backends))
     for (i, b) in enumerate(backends)
         b isa same || throw(ArgumentError(
             "burst $i is a $(nameof(typeof(b))) but the first a $(nameof(same)); bursts reached " *
@@ -126,21 +113,21 @@ function _merge_extent(backends::AbstractVector)
         # Consecutive burst numbers of two products are not consecutive bursts of anything. Two slices
         # of one datatake share an absolute orbit and a range origin, so nothing further downstream
         # would catch it: the grid would place one product's bursts by the other's annotation.
-        _burst_source(b) == source || throw(ArgumentError(
-            "burst $i comes from `$(_burst_source(b))` but the first from `$source`; bursts of " *
+        burst_source(b) == source || throw(ArgumentError(
+            "burst $i comes from `$(burst_source(b))` but the first from `$source`; bursts of " *
             "different products describe different acquisitions and do not merge"))
-        _burst_swath(b) == swath || throw(ArgumentError(
-            "burst $i is in subswath IW$(_burst_swath(b)) but the first in IW$swath. Subswaths " *
+        burst_swath(b) == swath || throw(ArgumentError(
+            "burst $i is in subswath IW$(burst_swath(b)) but the first in IW$swath. Subswaths " *
             "lie at different slant ranges, so merging them would need one range origin for two, " *
             "and their samples are not on one grid"))
         # Two channels of one subswath share their mission, orbit and range geometry, so this is the
         # only check that separates them; merging them would interleave two channels' samples.
-        _burst_polarization(b) == polarization || throw(ArgumentError(
-            "burst $i is polarization $(uppercase(_burst_polarization(b))) but the first " *
+        burst_polarization(b) == polarization || throw(ArgumentError(
+            "burst $i is polarization $(uppercase(burst_polarization(b))) but the first " *
             "$(uppercase(polarization)); a merged subswath carries one channel"))
     end
 
-    idx = [_burst_index(b) for b in backends]
+    idx = [burst_index(b) for b in backends]
     expected = first(idx):(first(idx) + length(idx) - 1)
     idx == collect(expected) || throw(ArgumentError(
         "the bursts given are $idx, which is not a consecutive ascending run. A merged subswath " *
@@ -150,10 +137,10 @@ function _merge_extent(backends::AbstractVector)
 end
 
 function _merge_orbit_path(backends::AbstractVector)
-    path = _orbit_path(first(backends))
+    path = orbit_path(first(backends))
     for (i, b) in enumerate(backends)
-        _orbit_path(b) == path || throw(ArgumentError(
-            "burst $i takes its state vectors from `$(_orbit_path(b))` but the first from " *
+        orbit_path(b) == path || throw(ArgumentError(
+            "burst $i takes its state vectors from `$(orbit_path(b))` but the first from " *
             "`$path`; one acquisition has one orbit"))
     end
     return path
@@ -180,106 +167,37 @@ function _check_merge_agreement(slcs, a::SubswathAnnotation, swath::Integer)
     return nothing
 end
 
-# The merged image spans the grid, and its azimuth window runs from the anchor burst's first line to the
-# grid's last row — one line per `1/prf` throughout, which is what makes the window and the row count
-# consistent with each other.
-function read_geometry(b::MergedBurstBackend)
-    a = _leading_annotation(b)
-    grid = b.grid
-
-    prf = 1 / a.azimuth_time_interval
+# The merged window: the whole grid, from the anchor burst's first line, one line per `1/prf` throughout.
+# That last part is what makes the window and the row count describe each other, and it is the property a
+# stack of whole bursts would not have.
+function _merged_window(b::MergedBurstBackend)
     start = _anchor(b)
-    stop = _advance(start, (grid.nlines - 1) * a.azimuth_time_interval)
-    far_range = a.starting_range + (grid.nsamples - 1.0) * a.range_pixel_spacing
-
-    epoch = epoch_of(start)
-    origin = UtcTime(epoch, 0.0)
-    return RadarGeometry(
-        a.starting_range,
-        far_range,
-        a.range_pixel_spacing,
-        a.wavelength,
-        prf,
-        seconds_between(origin, start),
-        seconds_between(origin, stop),
-        grid.nlines,
-        grid.nsamples,
-        S1_LOOK_SIDE,
-        epoch,
-    )
+    return start, _advance(start,
+                           (b.grid.nlines - 1) * _leading_annotation(b).azimuth_time_interval)
 end
 
-function read_identification(b::MergedBurstBackend)
-    a = _leading_annotation(b)
-    start = _anchor(b)
-    stop = _advance(start, (b.grid.nlines - 1) * a.azimuth_time_interval)
-    return Identification(
-        a.mission,
-        a.product_type,
-        a.absolute_orbit,
-        lowercase(a.pass_direction),
-        S1_LOOK_SIDE == LookLeft ? "Left" : "Right",
-        _utc_string(start),
-        _utc_string(stop),
-        # As for a burst or a mosaic: the footprint is in `manifest.safe`, and the whole product's
-        # polygon would not describe this subswath's merged extent.
-        "",
-    )
-end
+read_geometry(b::MergedBurstBackend) =
+    _s1_geometry(_leading_annotation(b), _anchor(b), b.grid.nlines, b.grid.nsamples)
 
-# The orbit must cover the merged window rather than one burst's, since a solve anywhere in the image
-# has to interpolate rather than extrapolate. So the window widened here is the whole grid's.
+read_identification(b::MergedBurstBackend) =
+    _s1_identification(_leading_annotation(b), _merged_window(b)...)
+
+# The orbit must cover the merged window rather than one burst's, since a solve anywhere in the image has
+# to interpolate rather than extrapolate.
 function read_orbit(b::MergedBurstBackend)
-    a = _leading_annotation(b)
-    start = _anchor(b)
-    stop = _advance(start, (b.grid.nlines - 1) * a.azimuth_time_interval)
-    orbit_path = b.orbit_path
-
-    table = read_eof_state_vectors(orbit_path; from = start, to = stop,
-                                   padding = S1_ORBIT_PADDING)
-    isempty(table.time) && throw(ArgumentError(
-        "`$orbit_path` has no state vectors within $(S1_ORBIT_PADDING) s of the merged window of " *
-        "`$(_path(b))` subswath IW$(b.swath); it is probably the orbit file of a different granule"))
-
-    epoch = UtcTime(epoch_of(start), 0.0)
-    return StateVectors(
-        [seconds_between(epoch, t) for t in table.time],
-        table.position,
-        table.velocity,
-        epoch.datetime,
-        "Hermite",
-        _eof_kind(orbit_path),
-    )
+    start, stop = _merged_window(b)
+    return _s1_orbit(b.orbit_path, start, stop,
+                     "the merged window of `$(_path(b))` subswath IW$(b.swath)")
 end
 
-# How the samples are reached depends on how the bursts were delivered, so the merged backend defers to
-# its sources: a `.SAFE` holds one raster per subswath with every burst stacked in it, while ASF
-# delivers a file per burst.
-read_pixels(b::MergedBurstBackend) = _merged_pixels(b, b.sources)
-
-# One memory-mapped file, read at a burst-dependent row offset.
-function _merged_pixels(b::MergedBurstBackend, sources::AbstractVector{Sentinel1Backend})
-    a = _leading_annotation(b)
-    product = first(sources).product
-    raster = open_tiff(measurement_path(product, b.swath))
-
-    expected = a.lines_per_burst * nbursts(a)
-    size(raster, 1) == expected || throw(ArgumentError(
-        "`$(path(raster))` has $(size(raster, 1)) lines, but subswath IW$(b.swath) has " *
-        "$(nbursts(a)) bursts of $(a.lines_per_burst) lines and so should have $expected. The " *
-        "raster and the annotation describe different products"))
-    size(raster, 2) == a.samples_per_burst || throw(ArgumentError(
-        "`$(path(raster))` is $(size(raster, 2)) samples wide but subswath IW$(b.swath) records " *
-        "$(a.samples_per_burst)"))
-
-    rasters = [raster for _ in b.grid.placements]
-    offsets = [(p.burst - 1) * a.lines_per_burst for p in b.grid.placements]
-    return ConcatenatedBursts(rasters, b.grid; row_offsets = offsets)
-end
-
-# One file per burst, each holding that burst alone, so every placement reads at row offset zero.
-_merged_pixels(b::MergedBurstBackend, sources::AbstractVector{<:AsfBurstBackend}) =
-    ConcatenatedBursts([read_pixels(s) for s in sources], b.grid)
+# Every burst backend reaches its own samples, so a merge asks each of its sources for a
+# [`BurstRaster`](@ref) and places what comes back. A `.SAFE` answers with the subswath's raster and the
+# burst's offset into it; an ASF burst with its own file at offset zero. Neither shape is special here.
+#
+# The sources are asked through `burst_rasters` rather than one at a time, because bursts that share a
+# file share the work of opening it: asking each of a subswath's nine bursts on its own would map and
+# validate the same raster nine times.
+read_pixels(b::MergedBurstBackend) = ConcatenatedBursts(burst_rasters(b.sources), b.grid)
 
 """
     grid(s::SLC) -> BurstGrid

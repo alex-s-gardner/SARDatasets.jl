@@ -176,16 +176,56 @@ function _check_disjoint(placements, nlines, swath)
     return nothing
 end
 
-# The placement covering a row, or `nothing` where no burst reaches. Placements are ascending and
-# disjoint, so this is a search rather than a scan.
-function _placement_at(g::BurstGrid, row::Integer)
-    lo, hi = 1, length(g.placements)
-    while lo <= hi
-        mid = (lo + hi) >>> 1
-        p = g.placements[mid]
-        row < first(p.grid_rows) ? (hi = mid - 1) :
-        row > last(p.grid_rows) ? (lo = mid + 1) :
-        return p
+"""
+    placement_index(g::BurstGrid, row) -> Int
+
+Which of `g`'s placements covers `row`, or `0` where no burst reaches it.
+
+The placements ascend and do not overlap, so the one that could cover a row is the last one starting at
+or before it; whether it does is one bounds check on that placement.
+"""
+function placement_index(g::BurstGrid, row::Integer)
+    k = searchsortedlast(g.placements, row; by = _placement_key)
+    k >= 1 && row <= last(g.placements[k].grid_rows) || return 0
+    return k
+end
+
+# `searchsortedlast` compares a placement against a bare row, so the key of either is the row it starts
+# at.
+_placement_key(p::BurstPlacement) = first(p.grid_rows)
+_placement_key(row::Integer) = row
+
+"""
+    placement_at(g::BurstGrid, row) -> Union{BurstPlacement,Nothing}
+
+The placement covering `row`, or `nothing` where no burst reaches it.
+"""
+function placement_at(g::BurstGrid, row::Integer)
+    k = placement_index(g, row)
+    return k == 0 ? nothing : g.placements[k]
+end
+
+"""
+    each_overlap(f, g::BurstGrid, rows, cols)
+
+Call `f(k, placement, grid_rows, cols)` for each placement of `g` that a window reaches.
+
+`grid_rows` and `cols` are the part of the window that placement covers, so a caller reads or writes
+exactly what the placement accounts for and needs no intersection arithmetic of its own. Placements the
+window misses are skipped, and the corners no placement covers are simply never visited — which is what
+makes them read as absent.
+"""
+function each_overlap(f, g::BurstGrid, rows::AbstractUnitRange{<:Integer},
+                      cols::AbstractUnitRange{<:Integer})
+    (isempty(rows) || isempty(cols)) && return nothing
+    for (k, p) in pairs(g.placements)
+        lo = max(first(rows), first(p.grid_rows))
+        hi = min(last(rows), last(p.grid_rows))
+        lo <= hi || continue
+        cl = max(first(cols), first(p.cols))
+        ch = min(last(cols), last(p.cols))
+        cl <= ch || continue
+        f(k, p, lo:hi, cl:ch)
     end
     return nothing
 end

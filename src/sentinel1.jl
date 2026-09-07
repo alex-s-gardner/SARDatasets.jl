@@ -490,13 +490,19 @@ Which part of a parsed [`Sentinel1Product`](@ref) an [`SLC`](@ref) describes.
 A mosaic spans every subswath the product was opened for, so it has no subswath or burst of its own and
 both are `nothing`. An individual burst names the subswath it belongs to and its own 1-based index.
 """
-struct Sentinel1Backend <: AbstractSLCBackend
+struct Sentinel1Backend <: AbstractBurstBackend
     product::Sentinel1Product
     swath::Union{Nothing,Int}
     burst::Union{Nothing,Int}
 end
 
 Sentinel1Backend(p::Sentinel1Product) = Sentinel1Backend(p, nothing, nothing)
+
+burst_index(b::Sentinel1Backend) = b.burst::Int
+burst_swath(b::Sentinel1Backend) = b.swath::Int
+burst_polarization(b::Sentinel1Backend) = lowercase(b.product.polarization)
+burst_source(b::Sentinel1Backend) = b.product.path
+orbit_path(b::Sentinel1Backend) = b.product.orbit_path
 
 _path(b::Sentinel1Backend) = b.product.path
 
@@ -532,6 +538,45 @@ function _check_burst(b::Sentinel1Backend, a::SubswathAnnotation)
     return i
 end
 
+# What a subswath's annotation says about the acquisition, over a window of it. Every Sentinel-1 SLC this
+# package returns — a mosaic, one burst, a merge of several — differs only in that window, so the record
+# itself is built once here.
+function _s1_identification(a::SubswathAnnotation, first_line::UtcTime, last_line::UtcTime)
+    return Identification(
+        a.mission,
+        a.product_type,
+        a.absolute_orbit,
+        lowercase(a.pass_direction),
+        S1_LOOK_SIDE == LookLeft ? "Left" : "Right",
+        _utc_string(first_line),
+        _utc_string(last_line),
+        # The product's footprint is in `manifest.safe` rather than the annotation, and describing a
+        # mosaic, a burst or a merge by the whole product's polygon would be wrong for all three.
+        "",
+    )
+end
+
+# The geometry of a window of one subswath: `nlines` rows from `start`, at the subswath's own range
+# origin and spacing. A single burst and a merge of bursts differ only in how many rows they span.
+function _s1_geometry(a::SubswathAnnotation, start::UtcTime, nlines::Integer, nsamples::Integer)
+    stop = _advance(start, (nlines - 1) * a.azimuth_time_interval)
+    epoch = epoch_of(start)
+    origin = UtcTime(epoch, 0.0)
+    return RadarGeometry(
+        a.starting_range,
+        a.starting_range + (nsamples - 1.0) * a.range_pixel_spacing,
+        a.range_pixel_spacing,
+        a.wavelength,
+        1 / a.azimuth_time_interval,
+        seconds_between(origin, start),
+        seconds_between(origin, stop),
+        Int(nlines),
+        Int(nsamples),
+        S1_LOOK_SIDE,
+        epoch,
+    )
+end
+
 function read_identification(b::Sentinel1Backend)
     a = _leading_annotation(b)
     first_line, last_line = if _is_mosaic(b)
@@ -542,18 +587,7 @@ function read_identification(b::Sentinel1Backend)
         start = a.burst_start[_check_burst(b, a)]
         start, _burst_stop(a, start)
     end
-    return Identification(
-        a.mission,
-        a.product_type,
-        a.absolute_orbit,
-        lowercase(a.pass_direction),
-        S1_LOOK_SIDE == LookLeft ? "Left" : "Right",
-        _utc_string(first_line),
-        _utc_string(last_line),
-        # The product's footprint is in `manifest.safe` rather than the annotation, and describing a
-        # mosaic or a single burst by the whole product's polygon would be wrong for both.
-        "",
-    )
+    return _s1_identification(a, first_line, last_line)
 end
 
 # The mosaic's geometry, matching `loadMetadataSlc`. The near-range subswath sets the range origin, the
@@ -617,26 +651,7 @@ end
 # burst extent, with no mosaicking.
 function _burst_geometry(b::Sentinel1Backend)
     a = annotation(b.product, b.swath)
-    start = a.burst_start[_check_burst(b, a)]
-    stop = _burst_stop(a, start)
-
-    prf = 1 / a.azimuth_time_interval
-    far_range = a.starting_range + (a.samples_per_burst - 1.0) * a.range_pixel_spacing
-    epoch = epoch_of(start)
-    origin = UtcTime(epoch, 0.0)
-    return RadarGeometry(
-        a.starting_range,
-        far_range,
-        a.range_pixel_spacing,
-        a.wavelength,
-        prf,
-        seconds_between(origin, start),
-        seconds_between(origin, stop),
-        a.lines_per_burst,
-        a.samples_per_burst,
-        S1_LOOK_SIDE,
-        epoch,
-    )
+    return _s1_geometry(a, a.burst_start[_check_burst(b, a)], a.lines_per_burst, a.samples_per_burst)
 end
 
 read_geometry(b::Sentinel1Backend) =
@@ -732,17 +747,16 @@ end
 # the whole mosaic's. `s1reader` builds one orbit per burst and the reference then takes the first
 # burst's, so a mosaic's orbit covers that burst rather than the full acquisition; widening it here
 # would hand an interpolator a different set of vectors than ISCE3 sees.
-function read_orbit(b::Sentinel1Backend)
-    a = _leading_annotation(b)
-    start = _anchor(b)
-    stop = _burst_stop(a, start)
-    orbit_path = b.product.orbit_path
-
+# The state vectors spanning one window, on the epoch that window's times are reported against.
+#
+# `what` names the window in the error, since an orbit file that does not cover it is nearly always the
+# orbit of a different granule and the message has to say which window went unmatched.
+function _s1_orbit(orbit_path::AbstractString, start::UtcTime, stop::UtcTime, what::AbstractString)
     table = read_eof_state_vectors(orbit_path; from = start, to = stop,
                                    padding = S1_ORBIT_PADDING)
     isempty(table.time) && throw(ArgumentError(
-        "`$orbit_path` has no state vectors within $(S1_ORBIT_PADDING) s of the acquisition " *
-        "window of `$(_path(b))`; it is probably the orbit file of a different granule"))
+        "`$orbit_path` has no state vectors within $(S1_ORBIT_PADDING) s of $what; it is probably " *
+        "the orbit file of a different granule"))
 
     epoch = UtcTime(epoch_of(start), 0.0)
     return StateVectors(
@@ -755,6 +769,12 @@ function read_orbit(b::Sentinel1Backend)
         "Hermite",
         _eof_kind(orbit_path),
     )
+end
+
+function read_orbit(b::Sentinel1Backend)
+    start = _anchor(b)
+    return _s1_orbit(b.product.orbit_path, start, _burst_stop(_leading_annotation(b), start),
+                     "the acquisition window of `$(_path(b))`")
 end
 
 # POEORB is the precise orbit, published days later; RESORB is the restituted one available at once.
@@ -799,4 +819,41 @@ function measurement_path(p::Sentinel1Product, swath::Integer)
         "`$(p.path)` has no measurement raster for subswath IW$swath polarization " *
         "$(uppercase(p.polarization))"))
     return joinpath(dir, only(sort!(hits)))
+end
+
+# A subswath's raster holds every burst of that subswath stacked, so a burst is a row range of it rather
+# than a file of its own. Both facts are checked against the annotation before anything is indexed: a
+# raster whose height is not the burst count times the burst length is not the subswath this annotation
+# describes, and reading it would silently return another burst's samples.
+function _subswath_raster(p::Sentinel1Product, swath::Integer)
+    a = annotation(p, swath)
+    raster = open_tiff(measurement_path(p, swath))
+
+    expected = a.lines_per_burst * nbursts(a)
+    size(raster, 1) == expected || throw(ArgumentError(
+        "`$(path(raster))` has $(size(raster, 1)) lines, but subswath IW$swath has $(nbursts(a)) " *
+        "bursts of $(a.lines_per_burst) lines and so should have $expected. The raster and the " *
+        "annotation describe different products"))
+    size(raster, 2) == a.samples_per_burst || throw(ArgumentError(
+        "`$(path(raster))` is $(size(raster, 2)) samples wide but subswath IW$swath records " *
+        "$(a.samples_per_burst)"))
+    return raster, a
+end
+
+read_pixels(b::Sentinel1Backend) = first(burst_raster(b))
+
+function burst_raster(b::Sentinel1Backend)
+    b.swath === nothing && throw(ArgumentError(
+        "this acquisition is the mosaic across `$(_path(b))`'s subswaths, which lie at different " *
+        "slant ranges and so have no single raster. Read a burst or a merge of them"))
+    raster, a = _subswath_raster(b.product, b.swath)
+    return BurstRaster(raster, (_check_burst(b, a) - 1) * a.lines_per_burst)
+end
+
+# Bursts of one subswath all lie in its one raster, so it is opened and checked once and each burst gets
+# its own offset into it.
+function burst_rasters(sources::AbstractVector{Sentinel1Backend})
+    b = first(sources)
+    raster, a = _subswath_raster(b.product, burst_swath(b))
+    return [BurstRaster(raster, (burst_index(s) - 1) * a.lines_per_burst) for s in sources]
 end

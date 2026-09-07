@@ -15,6 +15,29 @@
 # needs the distinction should use it rather than testing for zero.
 
 """
+    BurstRaster(raster, row_offset = 0)
+
+One burst's samples: the raster holding them, and where in it the burst begins.
+
+A `.SAFE` stores a subswath's bursts stacked in one raster, so each burst begins at its own offset into
+it; a burst delivered as its own file begins at the start. Pairing the two makes those the same thing to
+a reader.
+"""
+struct BurstRaster{S<:AbstractMatrix}
+    raster::S
+    # Where in `raster` the burst begins: zero when it holds that burst alone, and
+    # `(burst - 1) * lines_per_burst` when it holds the whole subswath stacked, which is how a `.SAFE`
+    # measurement raster stores it. A placement's `burst_rows` count from the burst's own first line, so
+    # this is what turns them into rows of the file.
+    row_offset::Int
+end
+
+BurstRaster(raster::AbstractMatrix) = BurstRaster(raster, 0)
+
+# The rows of the file a placement's rows come from.
+_file_rows(s::BurstRaster, rows::AbstractUnitRange) = (first(rows) + s.row_offset):(last(rows) + s.row_offset)
+
+"""
     ConcatenatedBursts{T,S} <: AbstractMatrix{T}
 
 The bursts of one Sentinel-1 subswath as a single matrix, read on demand.
@@ -27,39 +50,36 @@ Index with ranges — `A[rows, cols]` — wherever the shape of the read allows 
 one strip per burst it spans, while scalar indexing resolves a row per sample.
 """
 struct ConcatenatedBursts{T,S<:AbstractMatrix{T}} <: AbstractMatrix{T}
-    # Parallel to `grid.placements`: `sources[k]` is the raster `grid.placements[k]` reads from. One
-    # raster per placement rather than one per product, so bursts delivered as separate files and
-    # bursts sharing a subswath's raster are the same array.
-    sources::Vector{S}
-    # Where in `sources[k]` the burst begins: zero when the raster holds that burst alone, and
-    # `(burst - 1) * lines_per_burst` when it holds the whole subswath stacked, which is how a `.SAFE`
-    # measurement raster stores it. A placement's `burst_rows` count from the burst's own first line,
-    # so this is what turns them into rows of the file.
-    row_offsets::Vector{Int}
+    # Parallel to `grid.placements`: `sources[k]` is what `grid.placements[k]` reads from. One entry per
+    # placement rather than one per product, so bursts delivered as separate files and bursts sharing a
+    # subswath's raster are the same array.
+    sources::Vector{BurstRaster{S}}
     grid::BurstGrid
 end
 
-function ConcatenatedBursts(sources::AbstractVector{<:AbstractMatrix}, grid::BurstGrid;
-                            row_offsets::AbstractVector{<:Integer} = zeros(Int, length(sources)))
+function ConcatenatedBursts(sources::AbstractVector{<:BurstRaster}, grid::BurstGrid)
     length(sources) == length(grid.placements) || throw(ArgumentError(
         "the grid places $(length(grid.placements)) bursts but $(length(sources)) rasters were " *
         "given; there must be one raster per placed burst"))
-    length(row_offsets) == length(sources) || throw(ArgumentError(
-        "$(length(sources)) rasters were given with $(length(row_offsets)) row offsets; there must " *
-        "be one offset per raster"))
-    for (k, p) in enumerate(grid.placements)
-        src = sources[k]
-        off = row_offsets[k]
+    for (p, src) in zip(grid.placements, sources)
+        rows = _file_rows(src, p.burst_rows)
         # A raster too small for the rows and samples its placement takes would read outside it.
-        (off + last(p.burst_rows) <= size(src, 1) && last(p.cols) <= size(src, 2)) ||
+        (last(rows) <= size(src.raster, 1) && last(p.cols) <= size(src.raster, 2)) ||
             throw(ArgumentError(
-                "burst $(p.burst) contributes rows $(off + first(p.burst_rows))-" *
-                "$(off + last(p.burst_rows)) and samples $(p.cols) of a raster that is " *
-                "$(size(src, 1))x$(size(src, 2))"))
+                "burst $(p.burst) contributes rows $rows and samples $(p.cols) of a raster that is " *
+                "$(size(src.raster, 1))x$(size(src.raster, 2))"))
     end
-    src = collect(sources)
-    return ConcatenatedBursts{eltype(eltype(src)),eltype(src)}(src, collect(Int, row_offsets), grid)
+    held = collect(sources)
+    return ConcatenatedBursts{eltype(eltype(held)),fieldtype(eltype(held), :raster)}(held, grid)
 end
+
+# One raster shared by every placement, each reading at its burst's own offset into it.
+ConcatenatedBursts(raster::AbstractMatrix, grid::BurstGrid, row_offsets) =
+    ConcatenatedBursts([BurstRaster(raster, o) for o in row_offsets], grid)
+
+# One raster per placement, each holding that burst alone.
+ConcatenatedBursts(rasters::AbstractVector{<:AbstractMatrix}, grid::BurstGrid) =
+    ConcatenatedBursts(map(BurstRaster, rasters), grid)
 
 Base.size(A::ConcatenatedBursts) = size(A.grid)
 Base.IndexStyle(::Type{<:ConcatenatedBursts}) = IndexCartesian()
@@ -71,28 +91,14 @@ Where each burst sits in the merged image.
 """
 grid(A::ConcatenatedBursts) = A.grid
 
-# The placement covering a row and the index of its raster, or `nothing` outside every burst.
-function _source_at(A::ConcatenatedBursts, row::Integer)
-    ps = A.grid.placements
-    lo, hi = 1, length(ps)
-    while lo <= hi
-        mid = (lo + hi) >>> 1
-        p = ps[mid]
-        row < first(p.grid_rows) ? (hi = mid - 1) :
-        row > last(p.grid_rows) ? (lo = mid + 1) :
-        return (p, mid)
-    end
-    return nothing
-end
-
 function Base.getindex(A::ConcatenatedBursts{T}, i::Int, j::Int) where {T}
     @boundscheck checkbounds(A, i, j)
-    hit = _source_at(A, i)
-    hit === nothing && return zero(T)
-    p, k = hit
+    k = placement_index(A.grid, i)
+    k == 0 && return zero(T)
+    p = A.grid.placements[k]
     j in p.cols || return zero(T)
-    row = A.row_offsets[k] + first(p.burst_rows) + (i - first(p.grid_rows))
-    return A.sources[k][row, j]
+    src = A.sources[k]
+    return src.raster[src.row_offset + first(p.burst_rows) + (i - first(p.grid_rows)), j]
 end
 
 function Base.getindex(A::ConcatenatedBursts{T}, rows::AbstractUnitRange{<:Integer},
@@ -103,29 +109,24 @@ function Base.getindex(A::ConcatenatedBursts{T}, rows::AbstractUnitRange{<:Integ
     return out
 end
 
-# One strip per burst the window spans, taken from the burst's raster in a single read. The window is
+# One strip per burst the window spans, taken from that burst's raster in a single read. The window is
 # zeroed first, so the rows and samples no burst covers need no separate pass.
 function _read_window!(out, A::ConcatenatedBursts{T}, rows, cols) where {T}
     fill!(out, zero(T))
-    (isempty(rows) || isempty(cols)) && return out
-
-    for (k, p) in enumerate(A.grid.placements)
-        # The part of this burst's placement the window asks for.
-        lo = max(first(rows), first(p.grid_rows))
-        hi = min(last(rows), last(p.grid_rows))
-        lo <= hi || continue
-        cl = max(first(cols), first(p.cols))
-        ch = min(last(cols), last(p.cols))
-        cl <= ch || continue
-
-        shift = A.row_offsets[k] + first(p.burst_rows) - first(p.grid_rows)
-        strip = A.sources[k][(lo + shift):(hi + shift), cl:ch]
-        dest = view(out, (lo - first(rows) + 1):(hi - first(rows) + 1),
-                    (cl - first(cols) + 1):(ch - first(cols) + 1))
-        copyto!(dest, strip)
+    each_overlap(A.grid, rows, cols) do k, p, grid_rows, window_cols
+        src = A.sources[k]
+        shift = src.row_offset + first(p.burst_rows) - first(p.grid_rows)
+        strip = src.raster[(first(grid_rows) + shift):(last(grid_rows) + shift), window_cols]
+        copyto!(_window_view(out, rows, cols, grid_rows, window_cols), strip)
     end
     return out
 end
+
+# The part of a window-shaped result that a placement's rows and columns land in.
+_window_view(out, rows, cols, grid_rows, window_cols) =
+    view(out,
+         (first(grid_rows) - first(rows) + 1):(last(grid_rows) - first(rows) + 1),
+         (first(window_cols) - first(cols) + 1):(last(window_cols) - first(cols) + 1))
 
 """
     BurstValidMask <: AbstractMatrix{Bool}
@@ -145,7 +146,7 @@ Base.IndexStyle(::Type{BurstValidMask}) = IndexCartesian()
 
 function Base.getindex(m::BurstValidMask, i::Int, j::Int)
     @boundscheck checkbounds(m, i, j)
-    p = _placement_at(m.grid, i)
+    p = placement_at(m.grid, i)
     return p !== nothing && j in p.cols
 end
 
@@ -153,16 +154,8 @@ function Base.getindex(m::BurstValidMask, rows::AbstractUnitRange{<:Integer},
                        cols::AbstractUnitRange{<:Integer})
     @boundscheck checkbounds(m, rows, cols)
     out = fill(false, length(rows), length(cols))
-    (isempty(rows) || isempty(cols)) && return out
-    for p in m.grid.placements
-        lo = max(first(rows), first(p.grid_rows))
-        hi = min(last(rows), last(p.grid_rows))
-        lo <= hi || continue
-        cl = max(first(cols), first(p.cols))
-        ch = min(last(cols), last(p.cols))
-        cl <= ch || continue
-        out[(lo - first(rows) + 1):(hi - first(rows) + 1),
-            (cl - first(cols) + 1):(ch - first(cols) + 1)] .= true
+    each_overlap(m.grid, rows, cols) do _, _, grid_rows, window_cols
+        fill!(_window_view(out, rows, cols, grid_rows, window_cols), true)
     end
     return out
 end

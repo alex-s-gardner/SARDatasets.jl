@@ -196,14 +196,20 @@ end
 
 One ASF-delivered burst: its own raster, and the annotation of the subswath it belongs to.
 """
-struct AsfBurstBackend <: AbstractSLCBackend
+struct AsfBurstBackend <: AbstractBurstBackend
     source::AsfBurst
     annotation::SubswathAnnotation
-    orbit_path::String
+    orbit::String
 end
 
 _path(b::AsfBurstBackend) = asf_burst_url(b.source, "tiff")
 _leading_annotation(b::AsfBurstBackend) = b.annotation
+
+burst_index(b::AsfBurstBackend) = b.source.burst
+burst_swath(b::AsfBurstBackend) = b.source.swath
+burst_polarization(b::AsfBurstBackend) = lowercase(b.source.polarization)
+burst_source(b::AsfBurstBackend) = b.source.slc
+orbit_path(b::AsfBurstBackend) = b.orbit
 
 function _asf_check_burst(b::AsfBurstBackend)
     n = nbursts(b.annotation)
@@ -215,63 +221,20 @@ end
 
 _anchor(b::AsfBurstBackend) = b.annotation.burst_start[_asf_check_burst(b)]
 
-# A burst's geometry is its own, exactly as for a burst read from a `.SAFE`: the annotation an ASF burst
-# carries is the whole subswath's, so the same fields describe it.
-function read_geometry(b::AsfBurstBackend)
-    a = b.annotation
-    start = _anchor(b)
-    stop = _burst_stop(a, start)
-    epoch = epoch_of(start)
-    origin = UtcTime(epoch, 0.0)
-    return RadarGeometry(
-        a.starting_range,
-        a.starting_range + (a.samples_per_burst - 1.0) * a.range_pixel_spacing,
-        a.range_pixel_spacing,
-        a.wavelength,
-        1 / a.azimuth_time_interval,
-        seconds_between(origin, start),
-        seconds_between(origin, stop),
-        a.lines_per_burst,
-        a.samples_per_burst,
-        S1_LOOK_SIDE,
-        epoch,
-    )
-end
+# A burst's geometry and identification are its own, exactly as for a burst read from a `.SAFE`: the
+# annotation an ASF burst carries is the whole subswath's, so the same fields describe it and the same
+# helpers build the records.
+read_geometry(b::AsfBurstBackend) =
+    _s1_geometry(b.annotation, _anchor(b), b.annotation.lines_per_burst,
+                 b.annotation.samples_per_burst)
 
-function read_identification(b::AsfBurstBackend)
-    a = b.annotation
-    start = _anchor(b)
-    return Identification(
-        a.mission,
-        a.product_type,
-        a.absolute_orbit,
-        lowercase(a.pass_direction),
-        S1_LOOK_SIDE == LookLeft ? "Left" : "Right",
-        _utc_string(start),
-        _utc_string(_burst_stop(a, start)),
-        "",
-    )
-end
+read_identification(b::AsfBurstBackend) =
+    _s1_identification(b.annotation, _anchor(b), _burst_stop(b.annotation, _anchor(b)))
 
 function read_orbit(b::AsfBurstBackend)
-    a = b.annotation
     start = _anchor(b)
-    stop = _burst_stop(a, start)
-    table = read_eof_state_vectors(b.orbit_path; from = start, to = stop,
-                                   padding = S1_ORBIT_PADDING)
-    isempty(table.time) && throw(ArgumentError(
-        "`$(b.orbit_path)` has no state vectors within $(S1_ORBIT_PADDING) s of burst " *
-        "$(b.source.burst) of subswath IW$(b.source.swath); it is probably the orbit file of a " *
-        "different granule"))
-    epoch = UtcTime(epoch_of(start), 0.0)
-    return StateVectors(
-        [seconds_between(epoch, t) for t in table.time],
-        table.position,
-        table.velocity,
-        epoch.datetime,
-        "Hermite",
-        _eof_kind(b.orbit_path),
-    )
+    return _s1_orbit(b.orbit, start, _burst_stop(b.annotation, start),
+                     "burst $(b.source.burst) of subswath IW$(b.source.swath)")
 end
 
 # The file holds this burst alone, so its rows are the burst's own.

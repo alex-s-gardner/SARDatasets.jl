@@ -9,7 +9,7 @@
 # an inclusive index, dropping the last valid sample of every burst, which this reader keeps.
 
 using SLCDatasets: read_annotation, annotation_xml, burst_grid, nbursts, valid_lines, valid_samples,
-                   BurstGrid, MAX_BURST_GRID_RESIDUAL, _placement_at
+                   BurstGrid, MAX_BURST_GRID_RESIDUAL, placement_at
 using JSON3
 using Test
 
@@ -97,17 +97,17 @@ else
             @test g.residual < MAX_BURST_GRID_RESIDUAL / 10
 
             # Row lookup must agree with the placements it searches.
-            @test _placement_at(g, 1) === nothing ||
+            @test placement_at(g, 1) === nothing ||
                   first(g.placements[1].grid_rows) == 1
             for p in g.placements
-                @test _placement_at(g, first(p.grid_rows)) === p
-                @test _placement_at(g, last(p.grid_rows)) === p
+                @test placement_at(g, first(p.grid_rows)) === p
+                @test placement_at(g, last(p.grid_rows)) === p
             end
-            @test _placement_at(g, 0) === nothing
-            @test _placement_at(g, g.nlines + 1) === nothing
+            @test placement_at(g, 0) === nothing
+            @test placement_at(g, g.nlines + 1) === nothing
             # The margin before the first burst's valid region belongs to no burst.
             if first(g.placements[1].grid_rows) > 1
-                @test _placement_at(g, first(g.placements[1].grid_rows) - 1) === nothing
+                @test placement_at(g, first(g.placements[1].grid_rows) - 1) === nothing
             end
         end
     end

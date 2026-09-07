@@ -54,6 +54,27 @@ unimplemented, and [`pixels`](@ref) then reports that rather than failing on dis
 read_pixels(b::AbstractSLCBackend) = _no_pixels(b)
 
 """
+    burst_raster(b::AbstractBurstBackend) -> BurstRaster
+
+One burst's samples and where in its raster the burst begins.
+
+What a merge asks of each of its sources, so that a burst stacked with its neighbours in a subswath's
+raster and a burst delivered as its own file are placed the same way. A backend that cannot reach its
+samples reports that, as [`read_pixels`](@ref) does.
+"""
+burst_raster(b::AbstractBurstBackend) = BurstRaster(read_pixels(b))
+
+"""
+    burst_rasters(sources::AbstractVector{<:AbstractBurstBackend}) -> Vector{BurstRaster}
+
+The samples of several bursts of one subswath, opening each file they lie in once.
+
+Bursts delivered as separate files have nothing to share and are asked one at a time; bursts stacked in a
+subswath's raster share it, so a backend whose bursts do gives a method that opens it once.
+"""
+burst_rasters(sources::AbstractVector{<:AbstractBurstBackend}) = map(burst_raster, sources)
+
+"""
     Amplitude{T,P} <: AbstractMatrix{T}
 
 The magnitudes of a complex array, taken as they are read.
