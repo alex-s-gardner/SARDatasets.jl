@@ -213,8 +213,36 @@ end
 _findfloat(node, path) = parse(Float64, _findtext(node, path))
 _findint(node, path) = parse(Int, _findtext(node, path))
 
-# A whitespace-separated list of integers, as the per-line valid-sample arrays are written.
-_findints(node, path) = [parse(Int, s) for s in eachsplit(_findtext(node, path))]
+# A whitespace-separated list of integers, as the per-line valid-sample arrays are written. There is one
+# entry per line of a burst, so a subswath's arrays are some tens of thousands of numbers; the digits are
+# read straight from the text rather than through a substring per entry.
+function _findints(node, path)
+    s = _findtext(node, path)
+    b = codeunits(s)
+    out = Int[]
+    i = firstindex(b)
+    last_i = lastindex(b)
+    while i <= last_i
+        c = b[i]
+        if c == UInt8(' ') || c == UInt8('\t') || c == UInt8('\n') || c == UInt8('\r')
+            i += 1
+            continue
+        end
+        negative = c == UInt8('-')
+        (negative || c == UInt8('+')) && (i += 1)
+        i <= last_i && _isdigit(b[i]) || _bad_int_list(s, path)
+        value = 0
+        while i <= last_i && _isdigit(b[i])
+            value = 10 * value + Int(b[i] - UInt8('0'))
+            i += 1
+        end
+        push!(out, negative ? -value : value)
+    end
+    return out
+end
+
+@noinline _bad_int_list(s, path) = throw(ArgumentError(
+    "`$path` is not a list of integers: \"$s\""))
 
 # The epoch a product's times are reported against, truncated to the whole second.
 #

@@ -180,13 +180,20 @@ function _striped_tiff(path, data, fields, swapped)
 
     # A line is `nsamples` complex-int16 samples. A file whose byte counts say otherwise is laid out
     # differently than its tags claim, and indexing it would silently read across line boundaries.
+    #
+    # The loop reports nothing itself: building a message per line would cost more than the check, and
+    # a raster has as many lines as it is tall. It finds the first line that is wrong and leaves the
+    # complaining to `_bad_strip`.
     expected = 4 * nsamples
-    for i in eachindex(bytecounts)
-        bytecounts[i] == expected || throw(ArgumentError(
-            "`$path` gives line $i a strip of $(bytecounts[i]) bytes, but $nsamples complex " *
-            "16-bit integer samples occupy $expected"))
-        _tiff_inbounds(path, data, Int(offsets[i]) + 1, expected, "line $i")
+    limit = length(data) - expected + 1
+    bad = 0
+    for i in eachindex(bytecounts, offsets)
+        if bytecounts[i] != expected || !(1 <= offsets[i] + 1 <= limit)
+            bad = i
+            break
+        end
     end
+    bad == 0 || _bad_strip(path, data, offsets, bytecounts, bad, nsamples, expected)
 
     return StripedTiff{Complex{Int16},typeof(data)}(String(path), data, offsets, bytecounts,
                                                     nlines, nsamples, swapped)
@@ -194,6 +201,14 @@ end
 
 @noinline _tiff_truncated(path, what) = throw(ArgumentError(
     "`$path` ends before $what, so the file is truncated"))
+
+# Which of the two things is wrong with the line the scan stopped on.
+@noinline function _bad_strip(path, data, offsets, bytecounts, i, nsamples, expected)
+    bytecounts[i] == expected || throw(ArgumentError(
+        "`$path` gives line $i a strip of $(bytecounts[i]) bytes, but $nsamples complex 16-bit " *
+        "integer samples occupy $expected"))
+    _tiff_inbounds(path, data, Int(offsets[i]) + 1, expected, "line $i")
+end
 
 function _tiff_inbounds(path, data, offset, len, what)
     (offset >= 1 && offset + len - 1 <= length(data)) || _tiff_truncated(path, what)
@@ -302,29 +317,33 @@ function Base.getindex(t::StripedTiff{T}, rows::AbstractUnitRange{<:Integer},
     return out
 end
 
+# A line's samples are contiguous in the file but a row of the result is not, since the result is
+# column-major. So the window is gathered line by line into a transposed buffer — where each line *is*
+# contiguous — and transposed once at the end, which lets both halves run at memory bandwidth instead of
+# writing every sample to a strided address. Measured on a real subswath, that is a fifth to a third off
+# the read for any window wide enough to matter, and the buffer is the same size as the result.
+#
+# The bytes go through a buffer rather than being read from the mapping in place because a strip begins
+# wherever the writer put it, which in a real product is not a multiple of the sample size; a sample
+# straddling that boundary cannot be loaded directly.
 function _copy_window!(out, t::StripedTiff{T}, rows, cols) where {T}
     (isempty(rows) || isempty(cols)) && return out
     ncols = length(cols)
     first_col = Int(first(cols))
     data = t.data
-    swapped = t.swapped
 
-    # The line's bytes are copied into a buffer and read from there rather than being read in place: a
-    # strip begins wherever the writer put it, which in a real product is not a multiple of the sample
-    # size, and a sample straddling that boundary cannot be loaded from the mapping directly.
-    bytes = Vector{UInt8}(undef, 4 * ncols)
-    samples = reinterpret(T, bytes)
+    gathered = Matrix{T}(undef, ncols, length(rows))
+    bytes = reinterpret(UInt8, gathered)
+    linebytes = 4 * ncols
     for (di, i) in enumerate(rows)
-        off = _sample_offset(t, Int(i), first_col)
-        copyto!(bytes, 1, data, off, 4 * ncols)
-        if swapped
-            for j in 1:ncols
-                v = samples[j]
-                out[di, j] = T(bswap(real(v)), bswap(imag(v)))
-            end
-        else
-            copyto!(view(out, di, :), samples)
+        copyto!(bytes, (di - 1) * linebytes + 1, data, _sample_offset(t, Int(i), first_col), linebytes)
+    end
+    if t.swapped
+        for k in eachindex(gathered)
+            v = gathered[k]
+            gathered[k] = T(bswap(real(v)), bswap(imag(v)))
         end
     end
+    permutedims!(out, gathered, (2, 1))
     return out
 end
