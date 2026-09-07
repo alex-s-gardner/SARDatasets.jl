@@ -38,6 +38,7 @@ module SLCDatasets
 import Dates
 import HDF5
 using Dates: DateTime
+import EzXML
 using EzXML: parsexml, readxml, root, findfirst, findall, nodecontent, nodename, eachelement
 using HDF5: h5open, ishdf5, read_attribute
 using Mmap: mmap
@@ -50,6 +51,7 @@ export merge_bursts, pixels, amplitude, validmask
 export SLC, SLCSeries, Identification, RadarGeometry, StateVectors
 export Sentinel1Product
 export LocalFile, RemoteHTTP, RemoteS3
+export AsfBurst, asf_bursts
 
 # `LookSide`, `LookLeft` and `LookRight` are deliberately not exported: a geometry package consuming
 # this one defines its own, and exporting both makes the name ambiguous at every call site.
@@ -63,6 +65,8 @@ include("sentinel1.jl")
 include("burstgrid.jl")
 include("concatenated.jl")
 include("pixels.jl")
+# `asf.jl` before `merge.jl`: a merge dispatches on how its bursts were delivered.
+include("asf.jl")
 include("merge.jl")
 # `remote.jl` before `source.jl`: the remote sources are what `open_slc` dispatches on.
 include("remote.jl")

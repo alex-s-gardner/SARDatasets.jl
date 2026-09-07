@@ -328,10 +328,12 @@ function read_valid_region(node, swath::Integer, burst::Integer, lines_per_burst
     return lo, hi, first_valid + 1, last_valid + 1
 end
 
-function read_annotation(xml::AbstractString, swath::Integer)
-    doc = parsexml(xml)
-    r = root(doc)
+read_annotation(xml::AbstractString, swath::Integer) = read_annotation(root(parsexml(xml)), swath)
 
+# Taking the annotation's root element rather than its text, so a caller holding one already parsed —
+# an ASF burst's metadata wraps a whole annotation per subswath — parses it once rather than
+# serializing and reparsing a subtree.
+function read_annotation(r::EzXML.Node, swath::Integer)
     range_sampling_rate = _findfloat(r, "generalAnnotation/productInformation/rangeSamplingRate")
     radar_frequency = _findfloat(r, "generalAnnotation/productInformation/radarFrequency")
     slant_range_time = _findfloat(r, "imageAnnotation/imageInformation/slantRangeTime")

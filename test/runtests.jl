@@ -11,6 +11,7 @@ include("tiff_fixture.jl")
     @time @testset "Sentinel-1 reader" begin include("sentinel1.jl") end
     @time @testset "burst grid" begin include("burstgrid.jl") end
     @time @testset "merged bursts" begin include("merge.jl") end
+    @time @testset "ASF bursts" begin include("asf.jl") end
     @time @testset "access layer" begin include("remote.jl") end
     @time @testset "pairing" begin include("pairing.jl") end
     # Transfers a few megabytes from a DAAC and needs Earthdata credentials in `~/.netrc`.

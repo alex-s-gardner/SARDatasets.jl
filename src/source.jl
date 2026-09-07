@@ -81,13 +81,20 @@ function _open_sentinel1(path::AbstractString; orbit, swath, swaths, burst, pola
     return SLC(backend)
 end
 
-# The validation `open_slc` and `bursts` share, and the one parse of the container they both build on.
-function _sentinel1_product(path::AbstractString; orbit, swath, swaths, polarization)
+# A Sentinel-1 acquisition is refused without an orbit rather than returned half-read: the state vectors
+# are in a separately distributed file, so there is nothing in the product to fall back on.
+function _require_orbit(orbit, what::AbstractString)
     orbit === nothing && throw(ArgumentError(
-        "`$path` is a Sentinel-1 product, whose state vectors live in a separate POEORB/RESORB " *
-        "`.EOF` file rather than in the product. Pass `orbit = \"<file>.EOF\"`"))
+        "$what is Sentinel-1, whose state vectors live in a separate POEORB/RESORB `.EOF` file " *
+        "rather than in the product. Pass `orbit = \"<file>.EOF\"`"))
     orbit_path = String(orbit)
     isfile(orbit_path) || throw(ArgumentError("`$orbit_path` is not a readable orbit file"))
+    return orbit_path
+end
+
+# The validation `open_slc` and `bursts` share, and the one parse of the container they both build on.
+function _sentinel1_product(path::AbstractString; orbit, swath, swaths, polarization)
+    orbit_path = _require_orbit(orbit, string("`", path, "`"))
 
     swath !== nothing && swaths !== nothing && throw(ArgumentError(
         "pass either `swath` for one subswath or `swaths` for several, not both"))

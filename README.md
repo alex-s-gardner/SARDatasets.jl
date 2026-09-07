@@ -150,6 +150,26 @@ Pixels need an unpacked `.SAFE`. Inside a zip the raster is deflated, so a line 
 without inflating everything before it; `pixels` says so and names unpacking as the fix. Reading a
 zipped product's metadata is unaffected.
 
+### Bursts from ASF
+
+ASF's burst extractor serves an SLC as its individual bursts, so a few bursts of a subswath can be had
+without the several gigabytes of the whole product:
+
+```julia
+b = asf_bursts("S1A_IW_SLC__1SSH_20151120T080202_...", 2, "HH", 3:5; orbit = eof, dir = "bursts")
+ref = merge_bursts(b)
+```
+
+Bursts are numbered from 1 here as everywhere else in this package, and the conversion to the
+extractor's 0-based URLs happens inside. Authentication is from `~/.netrc`, as for `RemoteHTTP`. The
+extractor builds a burst on first request and answers `202` until it is ready, which is retried; `dir`
+is where the files are kept, and one already there is not fetched again.
+
+A merge of ASF bursts and a merge of the same bursts from a `.SAFE` give the same array — verified
+sample for sample, including across seams — so which delivery format you have does not change what you
+read. What differs is that each ASF file holds one burst, where a `.SAFE` raster holds a subswath's
+bursts stacked.
+
 ### A `Sentinel1Product`
 
 The parsed product itself, when several subswaths are wanted from one read:

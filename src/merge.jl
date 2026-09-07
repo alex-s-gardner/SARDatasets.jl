@@ -20,19 +20,24 @@ Several bursts of one Sentinel-1 subswath, described as a single acquisition.
 Built by [`merge_bursts`](@ref). Holds the parsed product, the subswath, and the layout the bursts were
 placed with, so the geometry and the samples both derive from one grid.
 """
-struct MergedBurstBackend <: AbstractSLCBackend
-    product::Sentinel1Product
+struct MergedBurstBackend{B<:AbstractSLCBackend} <: AbstractSLCBackend
+    # The backends of the bursts merged, in azimuth order and parallel to `grid.placements`. Holding
+    # them rather than a product is what lets bursts of a `.SAFE` and bursts delivered one file each
+    # merge by the same path: each knows how to reach its own samples.
+    sources::Vector{B}
+    annotation::SubswathAnnotation
     swath::Int
     bursts::UnitRange{Int}
     grid::BurstGrid
+    orbit_path::String
 end
 
-_path(b::MergedBurstBackend) = b.product.path
-_leading_annotation(b::MergedBurstBackend) = annotation(b.product, b.swath)
+_path(b::MergedBurstBackend) = _path(first(b.sources))
+_leading_annotation(b::MergedBurstBackend) = b.annotation
 
 # The epoch the merged times are reported against: the first burst placed, as for any single burst. So a
 # merge of one burst reports exactly what that burst reports.
-_anchor(b::MergedBurstBackend) = _leading_annotation(b).burst_start[first(b.bursts)]
+_anchor(b::MergedBurstBackend) = b.annotation.burst_start[first(b.bursts)]
 
 """
     merge_bursts(bursts::AbstractVector{<:SLC}; tolerance = MAX_BURST_GRID_RESIDUAL) -> SLC
@@ -68,50 +73,71 @@ function merge_bursts(slcs::AbstractVector{<:AbstractSLC};
         "a merged acquisition needs at least one burst, but no bursts were given"))
 
     backends = [_merge_backend(s, i) for (i, s) in enumerate(slcs)]
-    product, swath, range = _merge_extent(backends)
-    a = annotation(product, swath)
+    swath, range = _merge_extent(backends)
+    a = _leading_annotation(first(backends))
     _check_merge_agreement(slcs, a, swath)
 
     grid = burst_grid(a, range; tolerance)
-    return SLC(MergedBurstBackend(product, swath, range, grid))
+    return SLC(MergedBurstBackend(backends, a, swath, range, grid,
+                                  _merge_orbit_path(backends)))
 end
 
-# The backend of one burst, refused unless it is a burst of a Sentinel-1 product: a mosaic has no
-# subswath to place bursts in, and another sensor's product is not made of bursts at all.
+# The backend of one burst, refused unless it is one: a mosaic has no subswath to place bursts in, and
+# another sensor's product is not made of bursts at all.
 function _merge_backend(s::AbstractSLC, i::Integer)
     b = s.backend
-    b isa Sentinel1Backend || throw(ArgumentError(
+    if b isa Sentinel1Backend
+        b.swath === nothing && throw(ArgumentError(
+            "acquisition $i describes the mosaic across `$(_path(b))`'s subswaths rather than a " *
+            "burst of one. Merge the bursts of a single subswath, which `bursts(path; swath)` " *
+            "returns"))
+        return b
+    end
+    b isa AsfBurstBackend && return b
+    throw(ArgumentError(
         "acquisition $i is a $(nameof(typeof(b))) rather than a Sentinel-1 burst, and only " *
         "Sentinel-1 bursts merge"))
-    b.swath === nothing && throw(ArgumentError(
-        "acquisition $i describes the mosaic across `$(_path(b))`'s subswaths rather than a burst " *
-        "of one. Merge the bursts of a single subswath, which `bursts(path; swath)` returns"))
-    return b
 end
 
-# The one product, subswath and consecutive burst range the given bursts amount to.
-function _merge_extent(backends::AbstractVector{Sentinel1Backend})
-    first_backend = first(backends)
-    product = first_backend.product
-    swath = first_backend.swath::Int
+# Which burst of which subswath a backend describes, whatever delivered it.
+_burst_index(b::Sentinel1Backend) = b.burst::Int
+_burst_index(b::AsfBurstBackend) = b.source.burst
+_burst_swath(b::Sentinel1Backend) = b.swath::Int
+_burst_swath(b::AsfBurstBackend) = b.source.swath
+_orbit_path(b::Sentinel1Backend) = b.product.orbit_path
+_orbit_path(b::AsfBurstBackend) = b.orbit_path
 
+# The one subswath and consecutive burst range the given bursts amount to.
+function _merge_extent(backends::AbstractVector)
+    swath = _burst_swath(first(backends))
+    same = typeof(first(backends))
     for (i, b) in enumerate(backends)
-        b.product === product || b.product.path == product.path || throw(ArgumentError(
-            "burst $i comes from `$(_path(b))` but the first from `$(product.path)`; bursts of " *
-            "different products describe different acquisitions and do not merge"))
-        b.swath == swath || throw(ArgumentError(
-            "burst $i is in subswath IW$(b.swath) but the first in IW$swath. Subswaths lie at " *
-            "different slant ranges, so merging them would need one range origin for two, and " *
-            "their samples are not on one grid"))
+        b isa same || throw(ArgumentError(
+            "burst $i is a $(nameof(typeof(b))) but the first a $(nameof(same)); bursts reached " *
+            "different ways are not known to come from one product"))
+        _burst_swath(b) == swath || throw(ArgumentError(
+            "burst $i is in subswath IW$(_burst_swath(b)) but the first in IW$swath. Subswaths " *
+            "lie at different slant ranges, so merging them would need one range origin for two, " *
+            "and their samples are not on one grid"))
     end
 
-    idx = [b.burst::Int for b in backends]
+    idx = [_burst_index(b) for b in backends]
     expected = first(idx):(first(idx) + length(idx) - 1)
     idx == collect(expected) || throw(ArgumentError(
         "the bursts given are $idx, which is not a consecutive ascending run. A merged subswath " *
         "spans one unbroken range of bursts, since a gap would leave rows no burst covers and a " *
         "repeat would place one twice"))
-    return product, swath, expected
+    return swath, expected
+end
+
+function _merge_orbit_path(backends::AbstractVector)
+    path = _orbit_path(first(backends))
+    for (i, b) in enumerate(backends)
+        _orbit_path(b) == path || throw(ArgumentError(
+            "burst $i takes its state vectors from `$(_orbit_path(b))` but the first from " *
+            "`$path`; one acquisition has one orbit"))
+    end
+    return path
 end
 
 # The bursts must agree on what they are, not merely on where they came from. A caller reaching a
@@ -188,7 +214,7 @@ function read_orbit(b::MergedBurstBackend)
     a = _leading_annotation(b)
     start = _anchor(b)
     stop = _advance(start, (b.grid.nlines - 1) * a.azimuth_time_interval)
-    orbit_path = b.product.orbit_path
+    orbit_path = b.orbit_path
 
     table = read_eof_state_vectors(orbit_path; from = start, to = stop,
                                    padding = S1_ORBIT_PADDING)
@@ -207,11 +233,16 @@ function read_orbit(b::MergedBurstBackend)
     )
 end
 
-# A `.SAFE` holds one raster per subswath with every burst stacked in it, so all the placements read from
-# one memory-mapped file at a burst-dependent row offset.
-function read_pixels(b::MergedBurstBackend)
+# How the samples are reached depends on how the bursts were delivered, so the merged backend defers to
+# its sources: a `.SAFE` holds one raster per subswath with every burst stacked in it, while ASF
+# delivers a file per burst.
+read_pixels(b::MergedBurstBackend) = _merged_pixels(b, b.sources)
+
+# One memory-mapped file, read at a burst-dependent row offset.
+function _merged_pixels(b::MergedBurstBackend, sources::AbstractVector{Sentinel1Backend})
     a = _leading_annotation(b)
-    raster = open_tiff(measurement_path(b.product, b.swath))
+    product = first(sources).product
+    raster = open_tiff(measurement_path(product, b.swath))
 
     expected = a.lines_per_burst * nbursts(a)
     size(raster, 1) == expected || throw(ArgumentError(
@@ -222,10 +253,14 @@ function read_pixels(b::MergedBurstBackend)
         "`$(path(raster))` is $(size(raster, 2)) samples wide but subswath IW$(b.swath) records " *
         "$(a.samples_per_burst)"))
 
-    sources = [raster for _ in b.grid.placements]
+    rasters = [raster for _ in b.grid.placements]
     offsets = [(p.burst - 1) * a.lines_per_burst for p in b.grid.placements]
-    return ConcatenatedBursts(sources, b.grid; row_offsets = offsets)
+    return ConcatenatedBursts(rasters, b.grid; row_offsets = offsets)
 end
+
+# One file per burst, each holding that burst alone, so every placement reads at row offset zero.
+_merged_pixels(b::MergedBurstBackend, sources::AbstractVector{<:AsfBurstBackend}) =
+    ConcatenatedBursts([read_pixels(s) for s in sources], b.grid)
 
 """
     grid(s::SLC) -> BurstGrid
