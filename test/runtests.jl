@@ -14,6 +14,7 @@ include("tiff_fixture.jl")
     @time @testset "ASF bursts" begin include("asf.jl") end
     @time @testset "access layer" begin include("remote.jl") end
     @time @testset "pairing" begin include("pairing.jl") end
+    @time @testset "TOPS mode" begin include("tops.jl") end
     # Transfers a few megabytes from a DAAC and needs Earthdata credentials in `~/.netrc`.
     if get(ENV, "SAR_LIVE_TEST", "") == "1"
         @time @testset "live NISAR granule" begin include("live_nisar.jl") end

@@ -48,6 +48,10 @@ using ZipArchives: ZipReader, zip_name, zip_nentries, zip_readentry
 export open_slc, bursts, orbit, nlines, nsamples, start_datetime, stop_datetime
 export repeat_interval, epoch_offset, nbursts
 export merge_bursts, pixels, amplitude, validmask
+# Whether the samples carry a TOPS azimuth ramp, which decides whether they may be interpolated. Exported
+# because a consumer of `pixels` has to ask before resampling them, and `deramp_parameters` names what
+# removing the ramp would need.
+export is_tops, deramp_parameters
 export SLC, SLCSeries, Identification, RadarGeometry, StateVectors
 export Sentinel1Product
 export LocalFile, RemoteHTTP, RemoteS3

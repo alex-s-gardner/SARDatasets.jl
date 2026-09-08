@@ -32,6 +32,12 @@ struct MergedBurstBackend{B<:AbstractSLCBackend} <: AbstractSLCBackend
     orbit_path::String
 end
 
+# A merge of bursts is as TOPS as the bursts it merged. `MergedBurstBackend` subtypes
+# `AbstractSLCBackend` rather than `AbstractBurstBackend` — it describes several bursts, not one — so it
+# does not inherit the burst answer and states it here, deferring to its sources rather than asserting it:
+# were a non-TOPS sensor ever merged this way, the answer would follow the data.
+is_tops(b::MergedBurstBackend) = any(is_tops, b.sources)
+
 _path(b::MergedBurstBackend) = _path(first(b.sources))
 _leading_annotation(b::MergedBurstBackend) = b.annotation
 
