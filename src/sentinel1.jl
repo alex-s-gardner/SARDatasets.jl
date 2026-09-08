@@ -254,6 +254,42 @@ end
 # epoch is added back.
 epoch_of(t::UtcTime) = t.datetime - Dates.Day(S1_EPOCH_OFFSET_DAYS)
 
+# One `<azimuthFmRatePolynomial>`-style element.
+#
+# The coefficients have two spellings in the wild, and `s1reader`'s `parse_polynomial_element` handles both
+# by testing for the named child: newer IPF versions write the three coefficients as one whitespace-
+# separated text node, older ones as separate sibling elements after `azimuthTime` and `t0`. Both are read
+# here rather than only the current one, since which spelling a granule uses is a function of when it was
+# processed and a reader that took only the new form would fail on an archive product with no indication
+# that the format, rather than the data, was the problem.
+function _read_range_polynomial(elem, name::AbstractString)
+    time = parse_utc(_findtext(elem, "azimuthTime"))
+    r0 = _findfloat(elem, "t0") * SPEED_OF_LIGHT / 2
+
+    hit = findfirst(name, elem)
+    coeffs = if hit === nothing
+        # The older spelling: every element after `azimuthTime` and `t0` is a coefficient.
+        vals = [parse(Float64, strip(nodecontent(c)))
+                for c in eachelement(elem) if !(nodename(c) in ("azimuthTime", "t0"))]
+        _polynomial_coeffs(vals, name)
+    else
+        _polynomial_coeffs([parse(Float64, t) for t in split(strip(nodecontent(hit)))], name)
+    end
+    return RangePolynomial(time, r0, coeffs)
+end
+
+# Exactly three coefficients is what every product measured carries and what the evaluation assumes. A
+# shorter list is padded with zeros — a lower-order polynomial is still a valid one — but a longer list is
+# refused rather than truncated, since dropping a term silently changes the answer.
+function _polynomial_coeffs(vals::AbstractVector{<:Real}, name::AbstractString)
+    n = length(vals)
+    n == 0 && throw(ArgumentError("a `$name` element carries no coefficients"))
+    n <= 3 || throw(ArgumentError(
+        "a `$name` element carries $n coefficients, but this reader evaluates a quadratic in range " *
+        "and would have to drop the higher terms. Every product measured carries three."))
+    return (Float64(vals[1]), n >= 2 ? Float64(vals[2]) : 0.0, n >= 3 ? Float64(vals[3]) : 0.0)
+end
+
 """
     SubswathAnnotation
 
@@ -282,6 +318,12 @@ struct SubswathAnnotation
     last_valid_line::Vector{Int}
     first_valid_sample::Vector{Int}
     last_valid_sample::Vector{Int}
+    # The three quantities a TOPS deramp needs, which no other consumer reads. The two polynomial lists
+    # are not parallel to `burst_start`: the annotation estimates them on its own schedule, so a burst
+    # selects from them by time — see `nearest_polynomial` and `deramp_parameters`.
+    azimuth_steering_rate::Float64
+    azimuth_fm_rate::Vector{RangePolynomial}
+    doppler_centroid::Vector{RangePolynomial}
 end
 
 nbursts(a::SubswathAnnotation) = length(a.burst_start)
@@ -383,6 +425,17 @@ function read_annotation(r::EzXML.Node, swath::Integer)
             read_valid_region(b, swath, i, lines_per_burst)
     end
 
+    # The deramp fields, read as optional. A product that omits them is still fully readable for the
+    # geometry and the amplitudes; only `deramp_parameters` needs them, and it reports what is missing.
+    # So an absent list is an empty vector here rather than an error at parse time — the alternative
+    # would make a granule this reader handles today unreadable for want of a field nothing else uses.
+    steer = findfirst("generalAnnotation/productInformation/azimuthSteeringRate", r)
+    azimuth_steering_rate = steer === nothing ? NaN : parse(Float64, strip(nodecontent(steer)))
+    azimuth_fm_rate = _read_polynomial_list(r, "generalAnnotation/azimuthFmRateList",
+                                            "azimuthFmRatePolynomial")
+    # `dcEstimateList` sits under `dopplerCentroid`, not under `generalAnnotation` with the FM rates.
+    doppler_centroid = _read_polynomial_list(r, "dopplerCentroid/dcEstimateList", "dataDcPolynomial")
+
     # These three conversions must not be reordered: they reproduce ISCE3's values to the bit, and a
     # different association of the same operations would change the last digit.
     return SubswathAnnotation(
@@ -403,7 +456,17 @@ function read_annotation(r::EzXML.Node, swath::Integer)
         last_valid_line,
         first_valid_sample,
         last_valid_sample,
+        azimuth_steering_rate,
+        azimuth_fm_rate,
+        doppler_centroid,
     )
+end
+
+# A `<...List>` of polynomial elements, or an empty vector where the annotation has no such list.
+function _read_polynomial_list(r::EzXML.Node, path::AbstractString, name::AbstractString)
+    list = findfirst(path, r)
+    list === nothing && return RangePolynomial[]
+    return [_read_range_polynomial(e, name) for e in eachelement(list)]
 end
 
 """
@@ -520,6 +583,66 @@ _leading_annotation(b::Sentinel1Backend) =
 # `linesPerBurst` lines.
 _burst_stop(a::SubswathAnnotation, start::UtcTime) =
     _advance(start, (a.lines_per_burst - 1) * a.azimuth_time_interval)
+
+# One burst's deramp parameters from a subswath annotation.
+#
+# `burst` indexes the annotation's own burst list. The polynomials are chosen at the burst's mid-time,
+# which is also the instant a consumer interpolates its orbit at — `s1reader` selects on `sensing_mid` and
+# evaluates the along-track speed there, so the two must agree.
+function _deramp_parameters(a::SubswathAnnotation, burst::Integer)
+    n = nbursts(a)
+    (1 <= burst <= n) || throw(ArgumentError(
+        "subswath IW$(a.swath) has $n bursts, so burst $burst is not one of them"))
+
+    isempty(a.azimuth_fm_rate) && _missing_deramp_field("generalAnnotation/azimuthFmRateList", a)
+    isempty(a.doppler_centroid) && _missing_deramp_field("dopplerCentroid/dcEstimateList", a)
+    isnan(a.azimuth_steering_rate) &&
+        _missing_deramp_field("generalAnnotation/productInformation/azimuthSteeringRate", a)
+
+    start = a.burst_start[burst]
+    mid = _advance(start, (a.lines_per_burst - 1) * a.azimuth_time_interval / 2)
+    return DerampParameters(
+        nearest_polynomial(a.azimuth_fm_rate, mid),
+        nearest_polynomial(a.doppler_centroid, mid),
+        a.azimuth_steering_rate,
+        a.wavelength,
+        a.azimuth_time_interval,
+        a.starting_range,
+        a.range_pixel_spacing,
+        a.lines_per_burst,
+        mid,
+    )
+end
+
+@noinline _missing_deramp_field(path, a::SubswathAnnotation) = throw(ArgumentError(
+    "the annotation for subswath IW$(a.swath) has no `$path`, which removing the TOPS azimuth ramp " *
+    "needs. Every product measured carries it; a product that does not can still be read for its " *
+    "geometry and its amplitudes, but its complex samples must not be interpolated."))
+
+# One burst, however delivered. `burst` counts this acquisition's bursts, of which there is one, so the
+# only valid index maps to the burst this backend describes rather than to the annotation's first — which
+# for any burst but the first is a different ramp. Written over `AbstractBurstBackend` so a `.SAFE` burst
+# and an ASF one share it, as they share every other burst answer.
+function deramp_parameters(b::AbstractBurstBackend, burst::Integer)
+    burst == 1 || throw(ArgumentError(
+        "this SLC is a single burst, so 1 is the only burst index; got $burst. A merge of several " *
+        "bursts is what takes a range of them."))
+    return _deramp_parameters(_leading_annotation(b), burst_index(b))
+end
+
+# The mosaic across subswaths is a `Sentinel1Backend` that is not one burst, so it reaches the generic
+# non-TOPS method by type and would report the wrong reason. It has no single ramp: each subswath holds its
+# own bursts at its own slant range.
+function deramp_parameters(b::Sentinel1Backend, burst::Integer)
+    _is_mosaic(b) && throw(ArgumentError(
+        "this SLC is the mosaic across subswaths, which has no single azimuth ramp: each subswath has " *
+        "its own bursts at its own slant range, and a burst index does not identify one of them. Open " *
+        "a single burst, or merge one subswath's bursts, and deramp that."))
+    burst == 1 || throw(ArgumentError(
+        "this SLC is a single burst, so 1 is the only burst index; got $burst."))
+    a = _leading_annotation(b)
+    return _deramp_parameters(a, _check_burst(b, a))
+end
 
 # The instant every time in the result is measured from: the first burst of the lowest-numbered
 # subswath asked for. It is that burst rather than the earliest line in the product because the

@@ -68,8 +68,8 @@ acquisition" — and so is a merge of them. A NISAR RSLC is stripmap and is not.
 
 What this does *not* say is whether the ramp has already been removed. A product is delivered ramped; a
 processor that deramps writes its own product. Were a deramped Sentinel-1 product to arrive here it would
-still report `true`, so a consumer holding one has to override rather than ask — see
-[`deramp_parameters`](@ref) for what removing the ramp would need, none of which this package yet reads.
+still report `true`, so a consumer holding one has to override rather than ask.
+[`deramp_parameters`](@ref) returns what removing the ramp needs.
 """
 is_tops(s::AbstractSLC) = is_tops(s.backend)
 
@@ -81,27 +81,124 @@ is_tops(::AbstractSLCBackend) = false
 is_tops(::AbstractBurstBackend) = true
 
 """
-    deramp_parameters(s::SLC)
+    RangePolynomial
 
-The annotation fields a TOPS deramp needs. **Not implemented** — this throws, naming them.
+A quadratic in slant range, valid near one azimuth time.
 
-Removing a TOPS azimuth ramp needs three things from the Sentinel-1 annotation that this package does not
-currently parse: the azimuth FM rate polynomials (`azimuthFmRateList`), the Doppler centroid estimates
-(`dcEstimateList`), and the azimuth steering rate (`azimuthSteeringRate`). They are in the annotation
-already read for the geometry, so adding them is parsing rather than new IO — but nothing consumes them
-yet, and a shape guessed ahead of its consumer is worse than an honest gap.
+The annotation gives the azimuth FM rate and the Doppler centroid this way: a list of polynomials, each
+tagged with the azimuth time it was estimated at and the range it is referenced to. A consumer picks the
+entry nearest the burst it is working on — see [`nearest_polynomial`](@ref) — and evaluates it at a slant
+range in meters.
 
-This exists so that a consumer needing the deramp gets told what is missing and where it lives, rather
-than discovering it as a wrong answer. See [`is_tops`](@ref).
+`r0` is the reference range, not an offset into the image: the argument is `range - r0`, so the constant
+term is the polynomial's value at `r0`. The annotation writes that reference as the two-way time `t0`,
+which is why the parse multiplies by `c/2`.
 """
-function deramp_parameters(s::AbstractSLC)
-    throw(ArgumentError(
-        "TOPS deramping is not implemented. Removing the azimuth ramp needs three annotation fields " *
-        "this package does not yet parse — `azimuthFmRateList`, `dcEstimateList` and " *
-        "`azimuthSteeringRate` — all present in the annotation already read for the geometry. Until " *
-        "they are, complex samples from a TOPS acquisition must not be interpolated; `amplitude` is " *
-        "unaffected, since taking the magnitude discards the phase."))
+struct RangePolynomial
+    time::UtcTime
+    r0::Float64
+    coeffs::NTuple{3,Float64}
 end
+
+# `range` in meters, as `starting_range` and `range_pixel_spacing` are.
+(p::RangePolynomial)(range::Real) = evalpoly(Float64(range) - p.r0, p.coeffs)
+
+"""
+    nearest_polynomial(polys, t::UtcTime) -> RangePolynomial
+
+The polynomial estimated closest in azimuth time to `t`.
+
+How a burst selects its azimuth FM rate and Doppler centroid, following `s1reader`'s
+`get_nearest_polynomial`: the annotation lists several estimates across the subswath rather than one per
+burst, and the entry nearest the burst's own mid-time applies to it. Ties take the earlier entry, as a scan
+keeping the strict minimum does.
+"""
+function nearest_polynomial(polys::AbstractVector{RangePolynomial}, t::UtcTime)
+    isempty(polys) && throw(ArgumentError(
+        "the annotation lists no polynomials, so none can be selected for $t"))
+    best = firstindex(polys)
+    best_dt = abs(seconds_between(polys[best].time, t))
+    for i in Iterators.drop(eachindex(polys), 1)
+        dt = abs(seconds_between(polys[i].time, t))
+        if dt < best_dt
+            best, best_dt = i, dt
+        end
+    end
+    return polys[best]
+end
+
+"""
+    DerampParameters
+
+What removing one burst's TOPS azimuth ramp needs, from the annotation alone.
+
+The ramp is quadratic in azimuth about the burst's own center, with a coefficient that varies across the
+swath. Reconstructing it needs the azimuth FM rate and the Doppler centroid as functions of slant range —
+both `RangePolynomial`s, already selected for this burst — the antenna steering rate, and the scales that
+turn a pixel index into a range and an azimuth time.
+
+# Fields
+- `azimuth_fm_rate`, `doppler_centroid`: the polynomials for this burst, in slant range (meters).
+- `azimuth_steering_rate`: how fast the antenna sweeps in azimuth, in radians per second.
+- `wavelength`: meters.
+- `azimuth_time_interval`: seconds per line.
+- `starting_range`, `range_pixel_spacing`: meters, for `range = starting_range + sample * spacing`.
+- `lines_per_burst`: the burst's azimuth extent, whose half is the center the ramp is referenced to.
+- `burst_mid`: the burst's mid instant, which is where an orbit is interpolated for the along-track speed.
+
+What is *not* here is the orbit. The steering rate enters as `2 * |v| * rate / wavelength`, and `|v|` is
+the platform speed at `burst_mid` — which needs an interpolator this package does not have, since it holds
+tabulated state vectors rather than a trajectory. So the consumer computes that term from `burst_mid` and
+its own orbit; see [`orbit`](@ref) for the vectors to build one from.
+"""
+struct DerampParameters
+    azimuth_fm_rate::RangePolynomial
+    doppler_centroid::RangePolynomial
+    azimuth_steering_rate::Float64
+    wavelength::Float64
+    azimuth_time_interval::Float64
+    starting_range::Float64
+    range_pixel_spacing::Float64
+    lines_per_burst::Int
+    burst_mid::UtcTime
+end
+
+"""
+    deramp_parameters(s::SLC, burst = 1) -> DerampParameters
+
+What removing `burst`'s TOPS azimuth ramp needs.
+
+`burst` counts the bursts of the acquisition, so a single-burst `SLC` takes the default and a merged
+subswath names one — a merge is several bursts with several ramps, and there is no single answer for it.
+[`burst_at`](@ref) says which burst a line of a merged image belongs to.
+
+The polynomials are selected by time: the annotation estimates the azimuth FM rate and the Doppler
+centroid on its own schedule rather than once per burst, and the entry nearest this burst's mid-time
+applies to it, as `s1reader`'s `get_nearest_polynomial` does.
+
+Throws for a non-TOPS acquisition, which has no ramp to remove, and for a product whose annotation omits
+these fields — see [`DerampParameters`](@ref) for what they are and [`is_tops`](@ref) for why the question
+is asked here.
+"""
+deramp_parameters(s::AbstractSLC, burst::Integer = 1) = deramp_parameters(s.backend, burst)
+
+# A non-TOPS backend has no ramp. Named rather than a `MethodError`, since "there is nothing to remove" is
+# a different situation from "this reader cannot tell you".
+function deramp_parameters(b::AbstractSLCBackend, ::Integer)
+    is_tops(b) && throw(ArgumentError(
+        "this TOPS backend ($(nameof(typeof(b)))) does not supply deramp parameters"))
+    throw(ArgumentError(
+        "this is not a TOPS acquisition, so its azimuth phase carries no per-burst ramp and there is " *
+        "nothing to remove. `is_tops` answers the question before this is called."))
+end
+
+# Only a merge has a burst structure to resolve a line against. A single burst is all its own lines, which
+# is worth saying rather than answering `(1, line)`: a caller asking this of one burst has most likely
+# confused it with the merged image, and a plausible answer would hide that.
+@noinline burst_at(b::AbstractSLCBackend, ::Integer) = throw(ArgumentError(
+    "this acquisition ($(nameof(typeof(b)))) is not a merge of bursts, so a line does not resolve to " *
+    "one. A single burst is all its own lines — pass its own line index to `deramp_parameters`' burst " *
+    "1 — and a mosaic across subswaths has no single burst structure."))
 
 """
     burst_index(b::AbstractBurstBackend) -> Int
