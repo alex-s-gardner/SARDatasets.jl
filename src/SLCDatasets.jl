@@ -49,9 +49,10 @@ export open_slc, bursts, orbit, nlines, nsamples, start_datetime, stop_datetime
 export repeat_interval, epoch_offset, nbursts
 export merge_bursts, pixels, amplitude, validmask
 # Whether the samples carry a TOPS azimuth ramp, which decides whether they may be interpolated. Exported
-# because a consumer of `pixels` has to ask before resampling them, and `deramp_parameters` names what
-# removing the ramp would need.
-export is_tops, deramp_parameters
+# because a consumer of `pixels` has to ask before resampling them; `deramp_parameters` supplies what
+# removing the ramp needs, and `burst_at` says which burst's ramp a line of a merged image carries.
+export is_tops, deramp_parameters, burst_at
+export DerampParameters, RangePolynomial, nearest_polynomial
 export SLC, SLCSeries, Identification, RadarGeometry, StateVectors
 export Sentinel1Product
 export LocalFile, RemoteHTTP, RemoteS3

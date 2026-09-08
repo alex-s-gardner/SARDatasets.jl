@@ -39,6 +39,14 @@ function s1_annotation_document(sw::AbstractDict)
                       "<lastValidSample>$lasts</lastValidSample></burst>"
                   end
                   for (i, t) in enumerate(sw["burstAzimuthTimes"]))
+    steer = haskey(sw, "azimuthSteeringRate") ?
+            "<azimuthSteeringRate>$(sw["azimuthSteeringRate"])</azimuthSteeringRate>" : ""
+    fm_rate = s1_polynomial_list(get(sw, "azimuthFmRateList", nothing), "azimuthFmRateList",
+                                 "azimuthFmRatePolynomial")
+    # `dcEstimateList` hangs off `dopplerCentroid`, not `generalAnnotation`.
+    dc_list = s1_polynomial_list(get(sw, "dcEstimateList", nothing), "dcEstimateList",
+                                 "dataDcPolynomial")
+    doppler = isempty(dc_list) ? "" : "<dopplerCentroid>$dc_list</dopplerCentroid>"
     return """<?xml version="1.0" encoding="UTF-8"?>
     <product>
       <adsHeader>
@@ -52,8 +60,11 @@ function s1_annotation_document(sw::AbstractDict)
           <pass>$(sw["pass"])</pass>
           <rangeSamplingRate>$(sw["rangeSamplingRate"])</rangeSamplingRate>
           <radarFrequency>$(sw["radarFrequency"])</radarFrequency>
+          $steer
         </productInformation>
+        $fm_rate
       </generalAnnotation>
+      $doppler
       <imageAnnotation>
         <imageInformation>
           <azimuthTimeInterval>$(sw["azimuthTimeInterval"])</azimuthTimeInterval>
@@ -67,6 +78,27 @@ function s1_annotation_document(sw::AbstractDict)
       </swathTiming>
     </product>
     """
+end
+
+# A list of polynomial elements, or nothing at all where the input carries none — which is the state of the
+# committed golden inputs, since the deramp fields were not among the values dumped from those granules.
+# So the reader's optional-field path is what those exercise, and a test wanting the fields supplies them.
+#
+# An entry may set `"spelling" => "old"` to write the coefficients as separate sibling elements rather than
+# as one text node, which is how products processed before IPF ~2.36-2.82 carry them. Both spellings have
+# to be read, so both have to be writable here.
+function s1_polynomial_list(entries, list_name::AbstractString, poly_name::AbstractString)
+    entries === nothing && return ""
+    items = map(entries) do e
+        coeffs = e["coefficients"]
+        body = if get(e, "spelling", "new") == "old"
+            join("<c$i>$c</c$i>" for (i, c) in enumerate(coeffs))
+        else
+            "<$poly_name>$(join(coeffs, " "))</$poly_name>"
+        end
+        "<item><azimuthTime>$(e["azimuthTime"])</azimuthTime><t0>$(e["t0"])</t0>$body</item>"
+    end
+    return "<$list_name count=\"$(length(items))\">$(join(items))</$list_name>"
 end
 
 function s1_eof_document(vectors)

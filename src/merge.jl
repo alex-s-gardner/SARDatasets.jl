@@ -45,6 +45,46 @@ _leading_annotation(b::MergedBurstBackend) = b.annotation
 # merge of one burst reports exactly what that burst reports.
 _anchor(b::MergedBurstBackend) = b.annotation.burst_start[first(b.bursts)]
 
+# `burst` counts this acquisition's bursts from one, so it indexes `b.bursts` rather than the annotation's
+# whole list: a merge of bursts 5:8 has bursts 1 through 4.
+function deramp_parameters(b::MergedBurstBackend, burst::Integer)
+    n = length(b.bursts)
+    (1 <= burst <= n) || throw(ArgumentError(
+        "this merge spans $n bursts, so burst $burst is not one of them"))
+    return _deramp_parameters(b.annotation, b.bursts[burst])
+end
+
+"""
+    burst_at(s::SLC, line::Integer) -> (burst, burst_line)
+
+Which burst a line of a merged image belongs to, and which line of that burst it is.
+
+Both count from one: `burst` indexes the acquisition's own bursts, as [`deramp_parameters`](@ref) takes it,
+and `burst_line` is the row within that burst.
+
+This is what a consumer removing the TOPS azimuth ramp needs. The ramp is quadratic about each burst's
+*own* center, so a merged image carries one ramp per burst rather than a single one, and a phase evaluated
+against merged-grid rows alone would be wrong by up to half a burst. Merging places bursts at whole-row
+offsets and divides their overlap at the midpoint, so every row belongs to exactly one burst.
+
+Throws for a line outside the image, and for an acquisition that is not a merge — a single burst is all its
+own lines, and a mosaic has no single burst structure.
+"""
+burst_at(s::AbstractSLC, line::Integer) = burst_at(s.backend, line)
+
+function burst_at(b::MergedBurstBackend, line::Integer)
+    (1 <= line <= b.grid.nlines) || throw(ArgumentError(
+        "this merged image has $(b.grid.nlines) lines, so line $line is not one of them"))
+    for (k, p) in enumerate(b.grid.placements)
+        line in p.grid_rows && return (k, p.burst_rows[line - first(p.grid_rows) + 1])
+    end
+    # Placements cover the valid region of each burst, and merging trims the grid to those; a row between
+    # two of them would mean the grid outran the data it was built from.
+    throw(ArgumentError(
+        "line $line of this merged image falls in no burst's valid region, which a merged grid should " *
+        "not contain. This is a bug in the merge rather than a bad argument."))
+end
+
 """
     merge_bursts(bursts::AbstractVector{<:SLC}; tolerance = MAX_BURST_GRID_RESIDUAL) -> SLC
 
