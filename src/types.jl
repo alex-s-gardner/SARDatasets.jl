@@ -48,6 +48,62 @@ it knows.
 abstract type AbstractBurstBackend <: AbstractSLCBackend end
 
 """
+    is_tops(s::SLC) -> Bool
+    is_tops(b::AbstractSLCBackend) -> Bool
+
+Whether the acquisition was collected in TOPS mode.
+
+TOPS — Terrain Observation by Progressive Scans, which is how Sentinel-1 IW and EW are acquired — steers
+the antenna in azimuth across each burst. That puts a steep, burst-varying ramp on the azimuth phase, so
+the samples are not directly interpolable: a consumer resampling them onto another grid has to remove the
+ramp first and reapply it on the output, and one that interpolates without doing so aliases it. Amplitudes
+are unaffected, since taking the magnitude discards the phase.
+
+So this is the question a consumer of the *samples* has to ask, and the reason it lives here rather than
+with the consumer: whether an acquisition is TOPS is a property of how the product was collected, which
+this package reads and a geometry or correlation package cannot infer.
+
+Every [`AbstractBurstBackend`](@ref) is TOPS by construction — the type means "one burst of a TOPS
+acquisition" — and so is a merge of them. A NISAR RSLC is stripmap and is not.
+
+What this does *not* say is whether the ramp has already been removed. A product is delivered ramped; a
+processor that deramps writes its own product. Were a deramped Sentinel-1 product to arrive here it would
+still report `true`, so a consumer holding one has to override rather than ask — see
+[`deramp_parameters`](@ref) for what removing the ramp would need, none of which this package yet reads.
+"""
+is_tops(s::AbstractSLC) = is_tops(s.backend)
+
+# The default is `false` rather than an error: a backend that does not say is a non-TOPS sensor, and every
+# such sensor would otherwise have to declare a negative. TOPS backends are the ones that say so.
+is_tops(::AbstractSLCBackend) = false
+
+# Every burst backend is TOPS by construction: the abstract type means one burst of a TOPS acquisition.
+is_tops(::AbstractBurstBackend) = true
+
+"""
+    deramp_parameters(s::SLC)
+
+The annotation fields a TOPS deramp needs. **Not implemented** — this throws, naming them.
+
+Removing a TOPS azimuth ramp needs three things from the Sentinel-1 annotation that this package does not
+currently parse: the azimuth FM rate polynomials (`azimuthFmRateList`), the Doppler centroid estimates
+(`dcEstimateList`), and the azimuth steering rate (`azimuthSteeringRate`). They are in the annotation
+already read for the geometry, so adding them is parsing rather than new IO — but nothing consumes them
+yet, and a shape guessed ahead of its consumer is worse than an honest gap.
+
+This exists so that a consumer needing the deramp gets told what is missing and where it lives, rather
+than discovering it as a wrong answer. See [`is_tops`](@ref).
+"""
+function deramp_parameters(s::AbstractSLC)
+    throw(ArgumentError(
+        "TOPS deramping is not implemented. Removing the azimuth ramp needs three annotation fields " *
+        "this package does not yet parse — `azimuthFmRateList`, `dcEstimateList` and " *
+        "`azimuthSteeringRate` — all present in the annotation already read for the geometry. Until " *
+        "they are, complex samples from a TOPS acquisition must not be interpolated; `amplitude` is " *
+        "unaffected, since taking the magnitude discards the phase."))
+end
+
+"""
     burst_index(b::AbstractBurstBackend) -> Int
     burst_swath(b::AbstractBurstBackend) -> Int
     burst_polarization(b::AbstractBurstBackend) -> String
